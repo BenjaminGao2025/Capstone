@@ -2,11 +2,16 @@
 
 FDU MSACS Capstone project repo (CSCI 6806 / INFO 4205, Summer 2026).
 
-## Project
+## Project (v0.1 — draft)
 
-- **Final presentation**: 2026-07-29
-- **Topic**: TBD — choosing between three tracks (see Lesson 01).
-- **Team**: TBD by 2026-05-19.
+- **Track**: LLM Latency Optimization
+- **Topic**: Prefix-aware KV-cache scheduling for LLM agent workloads. See [docs/roadmap-v0.1.md](docs/roadmap-v0.1.md).
+- **Engine / model**: vLLM (ROCm) + Llama-3-8B-Instruct.
+- **Hardware**: 1 × AMD RX 7900 XTX (24GB).
+- **Final presentation**: 2026-07-29.
+- **Team**: forming, deadline 2026-05-19.
+
+➤ **Start here if you're a teammate**: [`docs/roadmap-v0.1.md`](docs/roadmap-v0.1.md).
 
 ## Repo layout
 
@@ -14,11 +19,13 @@ FDU MSACS Capstone project repo (CSCI 6806 / INFO 4205, Summer 2026).
 .
 ├── README.md
 ├── docs/
-│   └── lessons/                # Class meeting notes, one file per session
-│       └── lesson-01-course-overview.md
-├── related-work/               # (later) Papers, summaries, citations
-├── src/                        # (later) Code: reproduction + new model
+│   ├── roadmap-v0.1.md         # ← START HERE
+│   ├── lessons/                # Class meeting notes, one file per session
+│   │   └── lesson-01-course-overview.md
+│   └── related-work/           # (week 3) Paper summaries
+├── src/                        # (later) Code: scheduler + cache policy
 ├── experiments/                # (later) Scripts, configs, results
+│   └── figures/
 └── report/                     # (later) Final report + slides
 ```
 
