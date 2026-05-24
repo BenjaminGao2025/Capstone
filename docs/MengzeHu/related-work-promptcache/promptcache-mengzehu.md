@@ -1,0 +1,21 @@
+# Summary for Prompt Cache: Modular Attention Reuse for Low-Latency Inference
+
+Prompt Cache is a system proposed to reduce the inference latency of Large Language Models (LLMs) by reusing previously computed attention states across different prompts. The paper starts from a simple observation: many prompts used in real applications contain repeated text segments, such as system instructions, templates, retrieved documents, or reusable context blocks. Normally, these repeated sections are recomputed for every request, which increases inference cost and latency. Prompt Cache avoids this repeated computation by storing and reusing attention states that were already generated earlier.
+
+The idea extends the traditional KV Cache mechanism used in autoregressive decoding. Standard KV Cache only works within a single inference session, meaning cached attention states cannot be reused once the request finishes. Prompt Cache expands this concept by enabling cache reuse across multiple independent requests. As a result, the system can significantly reduce the expensive prefill stage before token generation begins, improving time-to-first-token (TTFT).
+
+To support reusable prompts, the paper introduces Prompt Markup Language (PML), a schema-based framework for organizing prompts into modular components. Developers can define reusable modules and build prompts by importing them when needed. The system precomputes the attention states for these modules and stores them in advance. During inference, cached states are loaded and combined instead of recalculating the entire prompt from scratch.
+
+One of the main technical difficulties comes from positional embeddings, since Transformer attention depends heavily on token positions. The authors address this issue by assigning fixed positional IDs to prompt modules. Their experiments show that transformers can still function correctly even with discontinuous position IDs, provided that the relative ordering of tokens remains consistent.
+
+The paper also extends PML with several advanced features. Parameterized modules allow reusable templates with variable content, while union modules support different prompt choices within the same schema. Nested modules make it possible to organize prompts hierarchically, and the framework is also compatible with instruction-tuned prompting formats commonly used in modern LLMs.
+
+During inference, Prompt Cache retrieves the cached attention states for reusable modules and computes only the uncached portions of the prompt. These states are then merged into a final KV representation before decoding begins. This process greatly reduces prefill computation and lowers latency without noticeably affecting model output quality.
+
+The implementation is built using PyTorch and HuggingFace Transformers. It supports several positional encoding methods, including RoPE and ALiBi, and allows prompt modules to be stored either in CPU memory or GPU memory depending on the desired balance between storage capacity and inference speed.
+
+Experimental results on the LongBench benchmark demonstrate substantial improvements in latency. The paper reports around 1.5× to 10× TTFT reduction on GPU inference and 20× to 70× reduction on CPU inference. At the same time, output quality remains stable across different LLM architectures such as Llama2, Falcon, and MPT.
+
+The authors also discuss several practical use cases where Prompt Cache can be particularly effective, including Retrieval-Augmented Generation (RAG), multi-file code generation, personalized recommendation systems, parameterized prompting, and long-context question answering.
+
+Overall, Prompt Cache presents a practical and effective optimization for LLM serving systems. By modularizing prompts and reusing attention states across requests, it reduces redundant computation and improves inference efficiency. Since the approach is largely independent from other optimization techniques, it can also be combined with future LLM serving improvements to achieve even better performance.
