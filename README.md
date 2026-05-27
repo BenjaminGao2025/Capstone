@@ -5,14 +5,15 @@ FDU MSACS Capstone project repo (CSCI 6806 / INFO 4205, Summer 2026).
 ## Project (v0.1 — draft)
 
 - **Track**: LLM Latency Optimization
-- **Topic**: Prefix-aware KV-cache scheduling for LLM agent workloads. See [docs/roadmap-v0.1.md](docs/roadmap-v0.1.md).
+- **Proposed topic**: Prefix-aware KV-cache scheduling for LLM agent workloads. See [docs/roadmap-v0.1.md](docs/roadmap-v0.1.md).
 - **Engine / model**: vLLM (ROCm) + Llama-3-8B-Instruct.
 - **Hardware**: 1 × AMD RX 7900 XTX (24GB).
 - **Final presentation**: 2026-07-29.
-- **Team**: forming, deadline 2026-05-19.
+- **Team**: Ben, Shun Huang, Chenxi Li, Mengze Hu, Yuhjen Sun.
 
 ➤ **Start here if you're a teammate**: [`docs/roadmap-v0.1.md`](docs/roadmap-v0.1.md).
 ➤ **Base paper PDFs**: [`docs/papers/`](docs/papers/).
+➤ **2026-05-27 related-work presentation**: start with the [`speaker guide`](docs/presentation/related-work-2026-05-27-guide.md), then use the [`PPTX`](report/slides/related-work-2026-05-27.pptx) and [`practice script`](docs/presentation/related-work-2026-05-27-script.md). Paper owners should stay near 90 seconds.
 
 ## Repo layout
 
@@ -22,13 +23,15 @@ FDU MSACS Capstone project repo (CSCI 6806 / INFO 4205, Summer 2026).
 ├── docs/
 │   ├── roadmap-v0.1.md         # ← START HERE
 │   ├── papers/                 # Base paper PDFs for related work
+│   ├── presentation/           # Slide guides, speaker scripts, role split
 │   ├── lessons/                # Class meeting notes, one file per session
 │   │   └── lesson-01-course-overview.md
 │   └── related-work/           # (week 3) Paper summaries
 ├── src/                        # (later) Code: scheduler + cache policy
 ├── experiments/                # (later) Scripts, configs, results
 │   └── figures/
-└── report/                     # (later) Final report + slides
+└── report/
+    └── slides/                 # Presentation decks and visual QA contact sheets
 ```
 
 ## Lessons
