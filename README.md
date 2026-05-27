@@ -12,6 +12,7 @@ FDU MSACS Capstone project repo (CSCI 6806 / INFO 4205, Summer 2026).
 - **Team**: forming, deadline 2026-05-19.
 
 ➤ **Start here if you're a teammate**: [`docs/roadmap-v0.1.md`](docs/roadmap-v0.1.md).
+➤ **Base paper PDFs**: [`docs/papers/`](docs/papers/).
 
 ## Repo layout
 
@@ -20,6 +21,7 @@ FDU MSACS Capstone project repo (CSCI 6806 / INFO 4205, Summer 2026).
 ├── README.md
 ├── docs/
 │   ├── roadmap-v0.1.md         # ← START HERE
+│   ├── papers/                 # Base paper PDFs for related work
 │   ├── lessons/                # Class meeting notes, one file per session
 │   │   └── lesson-01-course-overview.md
 │   └── related-work/           # (week 3) Paper summaries
