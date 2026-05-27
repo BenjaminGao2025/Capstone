@@ -13,7 +13,7 @@ FDU MSACS Capstone project repo (CSCI 6806 / INFO 4205, Summer 2026).
 
 ➤ **Start here if you're a teammate**: [`docs/roadmap-v0.1.md`](docs/roadmap-v0.1.md).
 ➤ **Base paper PDFs**: [`docs/papers/`](docs/papers/).
-➤ **2026-05-27 related-work presentation**: start with the [`speaker guide`](docs/presentation/related-work-2026-05-27-guide.md), then use the [`PPTX`](report/slides/related-work-2026-05-27.pptx) and [`practice script`](docs/presentation/related-work-2026-05-27-script.md). Paper owners should stay near 90 seconds.
+➤ **2026-05-27 related-work presentation**: start with the [`speaker guide`](docs/presentation/related-work-2026-05-27-guide.md), then use the [`PPTX`](report/slides/related-work-2026-05-27.pptx) and [`speaker notes`](docs/presentation/related-work-2026-05-27-script.md). Paper owners should stay near 90 seconds.
 
 ## Repo layout
 

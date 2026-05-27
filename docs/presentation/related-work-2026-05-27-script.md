@@ -1,109 +1,138 @@
-# Related Work Presentation Script — Short Version
+# Related Work Presentation Speaker Notes
 
-This is a **practice script**, not text to read word-for-word. Rewrite your part in your own English before class.
+This is not a word-for-word script. Each speaker should turn their section into
+4-5 personal bullets and practice without reading this file.
 
-Target total: **10-12 minutes**.
+Target total: 10-12 minutes.
 
-## Ben — Opening, Slides 1-4, about 2:00
+## Ben - Opening, Slides 1-4, about 2:00
 
-**Slide 1**
+Use your own words, but keep this spine:
 
-Good morning. Our capstone topic is prefix-aware KV-cache scheduling for LLM agent workloads. The general problem is LLM serving latency. In agent and RAG systems, many requests share long repeated prefixes, such as system prompts, tool descriptions, or retrieved documents. Our project asks whether the serving system can use that repeated structure to reduce time-to-first-token and tail latency.
+- We are working on LLM serving latency optimization.
+- More specifically, the direction is prefix-aware KV-cache scheduling: when many requests share the same system prompt, tool schema, retrieved document, or other long prefix, can the serving system reuse work and respond faster?
+- The four papers cover different layers of that problem:
+  - vLLM: KV-cache memory layout.
+  - SGLang: prefix reuse with RadixAttention.
+  - PromptCache: reusable prompt modules and prefill savings.
+  - Hydragen: shared-prefix attention work during decode.
+- The point of the related-work section is not that one paper solves our project. The point is that the papers divide the latency problem into memory layout, prefix storage, prefill reuse, and attention compute.
 
-**Slide 2**
+Handoff:
 
-We organized the related work into four layers. vLLM focuses on KV-cache memory layout. SGLang focuses on shared prefix reuse. PromptCache focuses on reusable prompt modules and prefill savings. Hydragen focuses on shared-prefix attention work during decoding.
+- Shun, please start with vLLM and PagedAttention.
 
-**Slide 3**
+## Shun Huang - vLLM / PagedAttention, Slides 5-6, about 1:30
 
-This pipeline shows where the papers fit. PromptCache mainly reduces prefill work. vLLM manages the KV cache. SGLang stores and reuses shared prefixes. Hydragen reduces repeated attention work during decode.
+Goal: explain vLLM as the memory-management paper.
 
-**Slide 4**
+Suggested bullets:
 
-The main point is that these papers are complementary. They do not all solve the same problem. Together, they show that latency is affected by memory layout, cache reuse, prompt structure, and attention computation.
+- The problem vLLM cares about is GPU memory waste from KV cache. Each request has a different sequence length, so a large contiguous allocation wastes space.
+- PagedAttention borrows the paging idea from operating systems. KV cache is split into blocks, and the runtime maps logical blocks to physical GPU blocks.
+- In the paper's evaluated settings, vLLM reports about 2-4x higher throughput than earlier serving systems while keeping latency similar.
+- For us, the takeaway is that cache layout changes batching capacity, memory pressure, and latency.
+- What vLLM does not solve for us: it does not decide which prefix-sharing requests should be admitted together before the cache is evicted.
 
-Shun, over to you for vLLM and PagedAttention.
+Be ready for:
 
-## Shun Huang — vLLM / PagedAttention, Slides 5-6, about 1:30
+- If vLLM already manages KV cache, why add a scheduler?
+- Short answer: PagedAttention reduces fragmentation, but it does not choose admission order for prefix-sharing requests under cache pressure.
 
-**Slide 5**
+Handoff:
 
-vLLM solves a memory management problem in LLM serving. During generation, every request stores a KV cache. If the system allocates one large contiguous memory area for each request, it wastes GPU memory because sequence lengths are different and unpredictable.
+- Chenxi, please take us to SGLang and RadixAttention.
 
-PagedAttention fixes this using an idea similar to operating-system paging. It divides KV cache into fixed-size logical blocks and maps them to physical GPU blocks. This reduces fragmentation and allows the server to batch more requests.
+## Chenxi Li - SGLang / RadixAttention, Slides 7-8, about 1:30
 
-**Slide 6**
+Goal: explain SGLang as the closest prefix-reuse related work.
 
-In the paper's evaluated settings, vLLM reports about 2 to 4 times higher throughput compared with earlier systems, while keeping latency at a similar level. For our project, the lesson is that cache layout affects batching, GPU memory pressure, and latency. Its limitation for us is that it does not decide which prefix-similar requests should be served together.
+Suggested bullets:
 
-Chenxi, please take us to SGLang, which is closer to prefix reuse.
+- SGLang treats many LLM applications as programs, not one-off prompts. Agent and tool workflows often repeat the same prefix.
+- RadixAttention stores prefixes and their KV cache in a radix tree. A new request can reuse cached prefix states when it overlaps with earlier requests.
+- In the paper's evaluated workloads, SGLang reports up to 6.4x throughput and 3.7x latency improvement.
+- For us, the takeaway is that prefix structure is a real serving-system signal, not just an application-level detail.
+- The difference from our project: SGLang is a separate runtime and programming model. Our proposed experiment asks what a smaller scheduler/cache-policy layer can do around vLLM.
 
-## Chenxi Li — SGLang / RadixAttention, Slides 7-8, about 1:30
+Be ready for:
 
-**Slide 7**
+- Why not just use SGLang?
+- Short answer: SGLang is the strongest related system, so it should be cited. Our capstone is smaller: test whether vLLM scheduling and cache policy can recover part of the prefix-reuse benefit without adopting a new runtime.
 
-SGLang starts from the idea that many LLM applications are programs, not single prompts. They include system prompts, tool schemas, few-shot examples, branches, and structured outputs. These workloads often repeat the same prefixes.
+Handoff:
 
-The main runtime idea is RadixAttention. It stores previous prompt prefixes and their KV cache in a radix tree. When a new request shares a prefix with an old request, the runtime can reuse the cached KV states instead of recomputing them.
+- Mengze, please cover PromptCache and prefill reuse.
 
-**Slide 8**
+## Mengze Hu - PromptCache, Slides 9-10, about 1:30
 
-In the paper's evaluated workloads, SGLang reports up to 6.4 times higher throughput and 3.7 times lower latency. This matters for our project because agent workloads naturally share prefixes. SGLang shows that exposing prefix structure can improve serving performance. Its limitation for us is that it is a separate runtime and programming model, while our base system is vLLM.
+Goal: explain PromptCache as the prefill-reuse paper.
 
-Mengze, please explain PromptCache, which focuses more directly on prefill reuse.
+Suggested bullets:
 
-## Mengze Hu — PromptCache, Slides 9-10, about 1:30
+- PromptCache focuses on repeated prompt components: system prompts, templates, retrieved documents, or long context blocks that appear again and again.
+- Developers mark reusable modules with Prompt Markup Language, or PML.
+- The system precomputes attention states for those modules and reuses them during inference, which mainly reduces prefill cost.
+- In the paper's evaluated settings, PromptCache reports 1.5-10x lower GPU time-to-first-token, with larger CPU reductions.
+- For us, the takeaway is that prefill dominates TTFT for long shared prompts. The difference is that PromptCache depends on explicit modules, while our scheduler should look for reuse from request structure.
 
-**Slide 9**
+Be ready for:
 
-PromptCache focuses on repeated prompt components. In real applications, prompts often reuse system instructions, templates, retrieved documents, or context blocks. Standard KV cache helps within one request, but after the request ends, the same text may be recomputed again in the next request.
+- What does PML stand for?
+- Does precomputed KV always remain exact when surrounding context changes?
+- Short answer: not automatically. PromptCache uses explicit modules and position handling. We should mention this as a tradeoff and avoid claiming that precomputed KV is universally reusable.
 
-PromptCache introduces Prompt Markup Language, or PML. Developers define reusable prompt modules. The system precomputes attention states for those modules and reuses them during inference. This reduces repeated prefill work.
+Handoff:
 
-**Slide 10**
+- Yuhjen, please cover Hydragen and shared-prefix attention compute.
 
-In the paper's evaluated settings, PromptCache reports 1.5 to 10 times lower GPU time-to-first-token, and even larger reductions on CPU. This matters for our project because TTFT is often dominated by prefill for long shared prompts. Its limitation for us is that PromptCache requires explicit prompt modules, while our scheduler should try to exploit shared prefixes more automatically.
+## Yuhjen Sun - Hydragen, Slides 11-12, about 1:30
 
-Yuhjen, please cover Hydragen, which looks at another cost of shared prefixes.
+Goal: explain Hydragen as the decode-side shared-prefix attention paper.
 
-## Yuhjen Sun — Hydragen, Slides 11-12, about 1:30
+Suggested bullets:
 
-**Slide 11**
+- Hydragen points out that shared prefixes are not only a storage issue. The attention kernel can still repeatedly read the same shared prefix keys and values across a batch.
+- The paper separates attention over the shared prefix from attention over each request's unique suffix, then batches the shared-prefix work.
+- In the paper's evaluated settings with large batches and long shared prefixes, Hydragen reports very large decode-throughput improvements, including up to 32x in one setup.
+- For us, the takeaway is that shared-prefix cost exists in attention compute and memory bandwidth too.
+- The difference from our project: Hydragen is kernel-level and decode-side. Our capstone should cite it as complementary related work, not try to implement it.
 
-Hydragen points out that shared prefixes can still be expensive. Systems like vLLM can reduce duplicated KV storage, but the attention kernel may still read the same shared prefix keys and values many times across a batch.
+Be ready for:
 
-Hydragen decomposes attention into two parts: attention over the shared prefix, and attention over each request's unique suffix. It batches the shared-prefix attention across requests, then merges the outputs with the suffix attention.
+- Why cite Hydragen if our scope is scheduling?
+- Short answer: it shows prefix sharing matters beyond KV storage. It is orthogonal to our scheduler layer and could be stacked with it later.
 
-**Slide 12**
+Handoff:
 
-In the paper's evaluated settings with large batches and long shared prefixes, Hydragen reports very large improvements, including up to 32 times decode throughput in one setup. This matters because shared prefixes affect not only storage, but also memory bandwidth and attention computation. Its limitation for us is that the kernel-level implementation is outside our current capstone scope.
+- Ben, please close with the synthesis and proposed evaluation.
 
-I will close by connecting the four papers to our project scope.
+## Ben - Synthesis and Scope, Slides 13-15, about 2:00
 
-## Ben — Synthesis and Scope, Slides 13-15, about 2:00
+Use your own words, but make these points clear:
 
-**Slide 13**
+- The synthesis is that each paper handles a different part of the serving stack.
+- What is missing for our capstone question is an operational policy: when cache capacity is limited, which prefix-sharing requests should run together so reuse actually happens?
+- Proposed evaluation:
+  - Model: Llama-3-8B-Instruct.
+  - Workload: synthetic agent/RAG-style traces with repeated prefixes.
+  - Hardware: one AMD RX 7900 XTX, if the environment works as planned.
+  - Baseline: vanilla vLLM first; SGLang comparison is a question for the professor.
+  - Metrics: TTFT, p95 latency, throughput, GPU memory, and cache hit rate.
+- Specific ask for the professor: should the baseline be only vanilla vLLM, or should we also compare against SGLang because it already has prefix reuse?
 
-Here is the synthesis. vLLM makes KV memory less fragmented. SGLang detects and stores shared prefix paths. PromptCache precomputes reusable prompt modules. Hydragen avoids repeated attention reads for shared prefixes.
+Closing line:
 
-A practical angle for our capstone is scheduling. Under cache limits, requests that share prefixes may need to be grouped deliberately so reuse actually matters.
+- That baseline question is the main feedback we want before we lock the methodology.
 
-**Slide 14**
+## Emergency 6-7 Minute Version
 
-Our proposed scope is therefore not to reimplement all four papers. It is smaller and more realistic. We will build a vLLM benchmark, add prefix grouping plus a simple cache policy, and measure TTFT, p95 latency, throughput, GPU memory, and cache hit rate.
+- Ben: slide 1 and slide 4 only, 1:00.
+- Shun: slide 5 only, 0:45.
+- Chenxi: slide 7 only, 0:45.
+- Mengze: slide 9 only, 0:45.
+- Yuhjen: slide 11 only, 0:45.
+- Ben: slide 14 only, 1:00.
 
-**Slide 15**
-
-After this related-work milestone, our next steps are methodology, environment setup, implementation, and evaluation. The key feedback we want is whether our related-work positioning and evaluation direction are reasonable: using vLLM as the base system, with SGLang, PromptCache, and Hydragen as related work, and focusing our implementation on prefix-aware scheduling and cache policy.
-
-Thank you. We are happy to take questions.
-
-## If You Need To Cut Your Section
-
-If you are running out of time, say only these three sentences:
-
-- "The problem is..."
-- "The key idea is..."
-- "This matters for our project because..."
-
-Do not explain every detail of the paper.
+In the emergency version, skip speedup numbers and focus on one takeaway per
+paper.
