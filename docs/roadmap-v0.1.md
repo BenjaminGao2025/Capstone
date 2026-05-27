@@ -105,10 +105,10 @@ Every member commits real code. Per the syllabus, GitHub commits are used to tra
 
 ## Reading list (base papers)
 
-1. **vLLM / PagedAttention** — Kwon et al., 2023. <https://arxiv.org/abs/2309.06180>
-2. **SGLang / RadixAttention** — Zheng et al., 2024. <https://arxiv.org/abs/2312.07104>
-3. **Hydragen** — Juravsky et al., 2024. <https://arxiv.org/abs/2402.05099>
-4. **PromptCache** — Gim et al., 2023. <https://arxiv.org/abs/2311.04934>
+1. **vLLM / PagedAttention** — Kwon et al., 2023. [PDF](papers/vllm-pagedattention.pdf) / <https://arxiv.org/abs/2309.06180>
+2. **SGLang / RadixAttention** — Zheng et al., 2024. [PDF](papers/sglang-radixattention.pdf) / <https://arxiv.org/abs/2312.07104>
+3. **Hydragen** — Juravsky et al., 2024. [PDF](papers/hydragen.pdf) / <https://arxiv.org/abs/2402.05099>
+4. **PromptCache** — Gim et al., 2023. [PDF](papers/promptcache.pdf) / <https://arxiv.org/abs/2311.04934>
 
 ## Hardware notes (Ben's machine)
 
