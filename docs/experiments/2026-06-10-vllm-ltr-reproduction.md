@@ -9,8 +9,8 @@ the pinned vLLM-LTR revision. The committed OPT-1.3B results validate the
 environment, predictor integration, benchmark data path, result serialization,
 and plotting workflow. They are not evidence of an LTR performance advantage.
 
-The formal Llama-3-8B rate sweep and out-of-distribution evaluation remain
-pending.
+The formal `Meta-Llama-3-8B-Instruct` rate sweep and out-of-distribution
+evaluation remain pending.
 
 ## Objective
 
@@ -31,6 +31,12 @@ result visualization before running the full experiment.
   installed.
 - Pinned `transformers==4.40.1`, `fastapi==0.110.3`, and `numpy==1.26.4` to
   match the validated environment.
+
+Model-selection decision: although the paper names Llama 3.1, the repository
+traces and predictors are Llama-3-8B artifacts, and vLLM 0.4.1 with
+Transformers 4.40.1 cannot parse the Llama 3.1 `rope_scaling` configuration.
+This reproduction therefore uses `Meta-Llama-3-8B-Instruct` and will state the
+deviation explicitly in the project defense.
 
 ### Build and compatibility fixes
 
@@ -85,9 +91,9 @@ lengths, while its ranking for OPT-1.3B was effectively noise. The observed
 Kendall's Tau was approximately `-0.09` with `p = 0.395`, so this smoke run
 tests integration rather than scheduler quality.
 
-### Llama-3-8B preparation
+### Meta-Llama-3-8B-Instruct preparation
 
-- Downloaded the Llama-3.1-8B-Instruct weights to the experiment volume.
+- Downloaded the `Meta-Llama-3-8B-Instruct` weights to the experiment volume.
 - Confirmed that the model could load on the 24 GB GPU and serve a successful
   completion request.
 - Added a probe that records cgroup memory watermarks and searches server logs
@@ -125,7 +131,8 @@ stored in these artifacts. Credentials remain environment-only.
 
 ## Remaining Work
 
-- Complete the Llama-3-8B memory/preemption probe for both scheduler arms.
+- Complete the `Meta-Llama-3-8B-Instruct` memory/preemption probe for both
+  scheduler arms.
 - Run FCFS and LTR at request rates `2`, `4`, `8`, `16`, and `32`, producing
   ten comparable result files.
 - Run at least one ShareGPT out-of-distribution comparison with the LMSYS
@@ -137,7 +144,8 @@ stored in these artifacts. Credentials remain environment-only.
 
 ## Completion Criteria
 
-The reproduction will be considered complete when the full Llama-3-8B sweep
-and out-of-distribution run finish without resource-policy violations, their raw
-results and plots are committed, and conclusions distinguish integration
-validation from statistically supported scheduling effects.
+The reproduction will be considered complete when the full
+`Meta-Llama-3-8B-Instruct` sweep and out-of-distribution run finish without
+resource-policy violations, their raw results and plots are committed, and
+conclusions distinguish integration validation from statistically supported
+scheduling effects.

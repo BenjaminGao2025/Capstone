@@ -31,6 +31,12 @@ The smoke results in this repository were produced with:
 - NVIDIA GeForce RTX 3090, 24 GB
 - XFormers attention with `--enforce-eager`; FlashAttention was not installed
 
+Model-selection decision: although the paper names Llama 3.1, the repository
+traces and predictors are Llama-3-8B artifacts, and vLLM 0.4.1 with
+Transformers 4.40.1 cannot parse the Llama 3.1 `rope_scaling` configuration.
+This reproduction therefore uses `Meta-Llama-3-8B-Instruct` and will state the
+deviation explicitly in the project defense.
+
 The serving engine must be built on a CUDA Linux host. Plot generation can be
 run separately on macOS or Linux.
 
@@ -149,9 +155,9 @@ its ranking on `facebook/opt-1.3b` is effectively noise (Kendall's Tau about
 
 ## Current Status
 
-The reproducible OPT-1.3B smoke pipeline is complete. The formal Llama-3-8B
-request-rate sweep and out-of-distribution comparison are the next experiment
-milestone. See the
+The reproducible OPT-1.3B smoke pipeline is complete. The formal
+`Meta-Llama-3-8B-Instruct` request-rate sweep and out-of-distribution comparison
+are the next experiment milestone. See the
 [reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
 for completed work, evidence, compatibility fixes, and remaining tasks.
 
