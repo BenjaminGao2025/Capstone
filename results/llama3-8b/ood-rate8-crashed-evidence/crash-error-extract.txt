@@ -1,0 +1,48 @@
+INFO:     127.0.0.1:33314 - "POST /v1/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33322 - "POST /v1/completions HTTP/1.1" 200 OK
+ERROR 06-11 11:15:44 async_llm_engine.py:43] Engine background task failed
+ERROR 06-11 11:15:44 async_llm_engine.py:43] Traceback (most recent call last):
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/engine/async_llm_engine.py", line 38, in _raise_exception_on_finish
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     task.result()
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/engine/async_llm_engine.py", line 491, in run_engine_loop
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     has_requests_in_progress = await asyncio.wait_for(
+ERROR 06-11 11:15:44 async_llm_engine.py:43]                                ^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/usr/lib/python3.11/asyncio/tasks.py", line 489, in wait_for
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     return fut.result()
+ERROR 06-11 11:15:44 async_llm_engine.py:43]            ^^^^^^^^^^^^
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/engine/async_llm_engine.py", line 465, in engine_step
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     request_outputs = await self.engine.step_async()
+ERROR 06-11 11:15:44 async_llm_engine.py:43]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/engine/async_llm_engine.py", line 209, in step_async
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     seq_group_metadata_list, scheduler_outputs = self.scheduler.schedule()
+ERROR 06-11 11:15:44 async_llm_engine.py:43]                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/core/scheduler.py", line 1626, in schedule
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     scheduler_outputs = self._schedule()
+ERROR 06-11 11:15:44 async_llm_engine.py:43]                         ^^^^^^^^^^^^^^^^
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/core/scheduler.py", line 1218, in _general_schedule
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     _, execute_pinned_requests, preempted, swapped_out, blocks_to_swap_out, blocks_to_swap_in = self.reserve_free_blocks(gpu_block_required, selected_seq_groups, ordered_requests, remaining_running, final_budget)
+ERROR 06-11 11:15:44 async_llm_engine.py:43]                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/core/scheduler.py", line 1434, in reserve_free_blocks
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     preempted_mode = self._preempt(request, blocks_to_swap_out, preemption_mode = PreemptionMode.SWAP)
+ERROR 06-11 11:15:44 async_llm_engine.py:43]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/core/scheduler.py", line 1788, in _preempt
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     self._preempt_by_swap(seq_group, blocks_to_swap_out)
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/core/scheduler.py", line 1809, in _preempt_by_swap
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     self._swap_out(seq_group, blocks_to_swap_out)
+ERROR 06-11 11:15:44 async_llm_engine.py:43]   File "/hy-tmp/vllm-ltr/vllm/core/scheduler.py", line 1830, in _swap_out
+ERROR 06-11 11:15:44 async_llm_engine.py:43]     raise RuntimeError(
+ERROR 06-11 11:15:44 async_llm_engine.py:43] RuntimeError: Aborted due to the lack of CPU swap space. Please increase the swap space to avoid this error.
+Exception in callback functools.partial(<function _raise_exception_on_finish at 0x14d496337e20>, error_callback=<bound method AsyncLLMEngine._error_callback of <vllm.engine.async_llm_engine.AsyncLLMEngine object at 0x14d347a29110>>)
+handle: <Handle functools.partial(<function _raise_exception_on_finish at 0x14d496337e20>, error_callback=<bound method AsyncLLMEngine._error_callback of <vllm.engine.async_llm_engine.AsyncLLMEngine object at 0x14d347a29110>>)>
+Traceback (most recent call last):
+  File "/hy-tmp/vllm-ltr/vllm/engine/async_llm_engine.py", line 38, in _raise_exception_on_finish
+    task.result()
+  File "/hy-tmp/vllm-ltr/vllm/engine/async_llm_engine.py", line 491, in run_engine_loop
+    has_requests_in_progress = await asyncio.wait_for(
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/tasks.py", line 489, in wait_for
+    return fut.result()
+           ^^^^^^^^^^^^
+  File "/hy-tmp/vllm-ltr/vllm/engine/async_llm_engine.py", line 465, in engine_step
+    request_outputs = await self.engine.step_async()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
