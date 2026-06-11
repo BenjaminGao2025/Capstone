@@ -147,8 +147,17 @@ is expected: the predictor was trained to rank Llama-3-8B output lengths, but
 its ranking on `facebook/opt-1.3b` is effectively noise (Kendall's Tau about
 -0.09), so LTR behaves approximately like random scheduling in this smoke test.
 
+## Current Status
+
+The reproducible OPT-1.3B smoke pipeline is complete. The formal Llama-3-8B
+request-rate sweep and out-of-distribution comparison are the next experiment
+milestone. See the
+[reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
+for completed work, evidence, compatibility fixes, and remaining tasks.
+
 ## Project Documents
 
+- [vLLM-LTR reproduction milestone](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
 - [Roadmap](docs/roadmap-v0.1.md)
 - [Related-work summaries](docs/related-work/)
 - [Presentation material](docs/presentation/)
