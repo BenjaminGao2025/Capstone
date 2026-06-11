@@ -155,11 +155,14 @@ its ranking on `facebook/opt-1.3b` is effectively noise (Kendall's Tau about
 
 ## Current Status
 
-The reproducible OPT-1.3B smoke pipeline is complete. The formal
-`Meta-Llama-3-8B-Instruct` request-rate sweep and out-of-distribution comparison
-are the next experiment milestone. See the
-[reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
-for completed work, evidence, compatibility fixes, and remaining tasks.
+The formal `Meta-Llama-3-8B-Instruct` reproduction is complete: the
+in-distribution rate sweep (2–32 req/s) reproduces the LTR advantage (up to
+8.1× mean TTFT), and the out-of-distribution evidence is in hand — ranking
+quality drops (tau -0.642 → -0.420), the tail-latency advantage inverts, and
+at rate 8 the mis-ranked LTR arm exhausts swap and crashes the engine. See the
+[formal run report](docs/experiments/2026-06-11-llama3-8b-formal-runs.md) and
+the earlier
+[reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md).
 
 ## Project Documents
 
