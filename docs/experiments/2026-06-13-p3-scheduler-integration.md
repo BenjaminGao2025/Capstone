@@ -10,9 +10,10 @@ end to end and beats the OPT-125M baseline under every policy tested. Off
 distribution, both post-prefill scheduling policies (v1, v2) crash the engine,
 and the failure analysis surfaced P3's most important finding: a structural
 trade-off between **information timing and information quality** in
-length-prediction scheduling. One ablation cell (original policy + our head on
-ShareGPT) is pending — the run was accidentally terminated by operator error
-during shutdown and will be the first job of the next GPU session.
+length-prediction scheduling. The ablation OOD cell (initially killed by an
+operator error at shutdown) was rerun on 2026-06-13: under the original
+pre-prefill policy our head completes 500/500 on ShareGPT and improves on
+OPT-125M by ~7–9% across mean TTFT, mean latency, and p99 (τ -.465 vs -.420).
 
 ## Integration design
 
@@ -54,7 +55,7 @@ tau = serving-side Kendall tau (predictor score vs realized length).
 |---|---|---|---|---|---|
 | lmsys r8 | 16.36 / 48.6 / 120.9 (n=500) | 2.03 / 41.4 / 148.4 (n=500, τ -.641) | **1.84 / 36.4 / 134.2** (n=500, τ -.722) | 0.26 / 40.3 / 141.8 (n=500, τ -.712) | 1.33 / 37.9 / 134.0 (n=500, τ -.701) |
 | lmsys r32 | 21.22 / 63.6 / 141.8 (n=500) | 6.10 / 48.3 / 146.1 (n=500, τ -.642) | — (not in plan) | 0.56 / 53.2 / 155.9 (n=500, τ -.674) | 7.11 / 50.3 / 141.1 (n=500, τ -.650) |
-| OOD (ShareGPT) r4 | 40.89 / 78.5 / 150.2 (n=500) | 23.81 / 74.9 / 231.0 (n=500, τ -.420) | **PENDING** (run killed by operator error; first job next session) | **CRASH** n=91 | **CRASH** n=124 |
+| OOD (ShareGPT) r4 | 40.89 / 78.5 / 150.2 (n=500) | 23.81 / 74.9 / 231.0 (n=500, τ -.420) | **22.24 / 68.2 / 217.0** (n=500, τ -.465) | **CRASH** n=91 | **CRASH** n=124 |
 | OOD (ShareGPT) r8 | ~40.9 (n=500) | **CRASH** n=15 | — (not in plan) | **CRASH** n=10 | **CRASH** n=91 |
 
 Attribution at lmsys r8 (mean TTFT): FCFS 16.36 → OPT 2.03 → ablation 1.84 →
