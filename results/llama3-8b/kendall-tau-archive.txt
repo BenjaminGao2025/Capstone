@@ -1,24 +1,14 @@
-# Kendall Tau 归档 — LTR 预测器排序质量证据链
-# ============================================================
-# 符号约定(代码证据:vllm/core/scheduler.py:996):
-#   tau = kendalltau(aux_model_score, actual_output_len)
-#   调度器按分数降序执行(高分先跑,key=-aux_model_score)
-#   => 负 tau = 预测有效(高分=短任务,SJF 近似)
-#   => tau≈0  = 预测失效(无排序信号)
-#   => 正 tau = 反向有害(长任务被优先)
-# 画图用 -tau,轴标签「预测排序质量(-Kendall Tau,越高越好)」
-# 勿用 |tau|(会掩盖病态正相关)。
-# 数据来源:LTR 臂 JSON 的 aux_kendall_tau 字段(sweep 起自带);
-#          probe 轮 JSON 无此字段,从 probe-run.log 抓取。
-# ============================================================
-# run                                   dataset            tau        p
-probe-rate8-ltr (in-dist)               lmsys              -0.6416    1.35e-101
-sweep-rate2  -ltr (in-dist)            lmsys              -0.6415    1.65e-101
-sweep-rate4  -ltr (in-dist)            lmsys              -0.6420    9.40e-102
-sweep-rate8  -ltr (in-dist)            lmsys              -0.6415    1.45e-101
-sweep-rate16 -ltr (in-dist)            lmsys              -0.6417    1.21e-101
-sweep-rate32 -ltr (in-dist)            lmsys              -0.6420    9.39e-102
-offline-lmsys   -500 (no-serving)         lmsys              -0.6402    3.42e-101
-offline-sharegpt-500 (no-serving)         sharegpt           -0.4200    1.05e-44
-ood-rate4-ltr (serving)                 sharegpt           -0.4204    9.06e-45
-ood-rate8-ltr (serving, CRASHED n=15)   sharegpt           n/a        swap-exhaustion
+matrix-lmsys-score      lmsys              -0.6402    3.42e-101
+matrix-lmsys-score      sharegpt           -0.4200    1.05e-44
+matrix-lmsys-score      alpaca             -0.5790    2.90e-83
+matrix-sharegpt-score   lmsys              -0.4798    1.14e-57
+matrix-sharegpt-score   sharegpt           -0.5156    1.78e-66
+matrix-sharegpt-score   alpaca             -0.5616    1.87e-78
+offline-internal-first_tok_entropy  lmsys              +0.1742    6.25e-09
+offline-internal-mean_entropy       lmsys              +0.0652    2.97e-02
+offline-internal-entropy_std        lmsys              +0.0046    8.77e-01
+offline-internal-mean_nll           lmsys              -0.0395    1.87e-01
+offline-internal-first_tok_entropy  sharegpt           -0.0233    4.36e-01
+offline-internal-mean_entropy       sharegpt           +0.0875    3.45e-03
+offline-internal-entropy_std        sharegpt           +0.0673    2.46e-02
+offline-internal-mean_nll           sharegpt           +0.1090    2.72e-04
