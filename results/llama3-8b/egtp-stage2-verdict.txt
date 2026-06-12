@@ -1,0 +1,15 @@
+train n=9760 on cuda
+ew16    ridge   lmsys=0.577  sharegpt=0.292  alpaca=0.514
+ew16    mlp     lmsys=0.631  sharegpt=0.332  alpaca=0.563
+ew32    ridge   lmsys=0.551  sharegpt=0.300  alpaca=0.455
+ew32    mlp     lmsys=0.590  sharegpt=0.354  alpaca=0.503
+mean16  ridge   lmsys=0.624  sharegpt=0.351  alpaca=0.597
+mean16  mlp     lmsys=0.677  sharegpt=0.413  alpaca=0.652
+mean32  ridge   lmsys=0.612  sharegpt=0.348  alpaca=0.547
+mean32  mlp     lmsys=0.646  sharegpt=0.395  alpaca=0.594
+last32  ridge   lmsys=0.652  sharegpt=0.447  alpaca=0.631
+last32  mlp     lmsys=0.713  sharegpt=0.428  alpaca=0.674
+
+BEST: last32/mlp  in-dist=0.713 (OPT 0.640)  sharegpt=0.428 (OPT 0.420)  alpaca=0.674 (OPT 0.579)
+VERDICT: PASS — internal representations match in-dist and beat OPT OOD; stage 3 justified
+HEAD_DONE

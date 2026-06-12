@@ -12,3 +12,7 @@ offline-internal-first_tok_entropy  sharegpt           -0.0233    4.36e-01
 offline-internal-mean_entropy       sharegpt           +0.0875    3.45e-03
 offline-internal-entropy_std        sharegpt           +0.0673    2.46e-02
 offline-internal-mean_nll           sharegpt           +0.1090    2.72e-04
+egtp-last32-mlp (trained head)          lmsys              -0.713*    stage2
+egtp-last32-mlp (trained head)          sharegpt           -0.428*    stage2
+egtp-last32-mlp (trained head)          alpaca             -0.674*    stage2
+# * 号:EGTP-lite 头输出与长度正相关,取负以统一"越负=排序越有效"口径
