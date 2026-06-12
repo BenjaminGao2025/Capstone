@@ -1,0 +1,38 @@
+waiting for server (pid=11978) ...
+server healthy, starting benchmark: sched=opt-xxx model=facebook/opt-1.3b n=50 rate=8 seed=0
+/usr/local/lib/python3.11/dist-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+Namespace(backend='vllm', base_url=None, host='localhost', port=3343, endpoint='/v1/completions', dataset='lmsys-Meta-Llama-3-8B-Instruct-t1.0-s0-l8192-c10000-rFalse.jsonl', model='facebook/opt-1.3b', tokenizer='facebook/opt-1.3b', best_of=1, use_beam_search=False, eval_max_tpot=False, output_len=128, output_len_def='-1', request_time=-1.0, num_prompts=50, request_rate=8.0, ignore_limit=False, seed=0, trust_remote_code=False, disable_tqdm=False, schedule_type='opt-xxx', approx_type='full', approx_param=0, cv=1.0, metadata=None, result_dir='/hy-tmp/results')
+  0%|          | 0/50 [00:00<?, ?it/s]  2%|▏         | 1/50 [00:02<01:46,  2.18s/it]  4%|▍         | 2/50 [00:02<00:49,  1.04s/it]  6%|▌         | 3/50 [00:02<00:31,  1.51it/s]  8%|▊         | 4/50 [00:04<00:44,  1.04it/s] 12%|█▏        | 6/50 [00:05<00:35,  1.23it/s] 24%|██▍       | 12/50 [00:05<00:10,  3.76it/s] 28%|██▊       | 14/50 [00:06<00:11,  3.04it/s] 32%|███▏      | 16/50 [00:06<00:09,  3.63it/s] 34%|███▍      | 17/50 [00:07<00:09,  3.65it/s] 40%|████      | 20/50 [00:07<00:05,  5.28it/s] 44%|████▍     | 22/50 [00:07<00:05,  5.33it/s] 52%|█████▏    | 26/50 [00:08<00:03,  6.63it/s] 54%|█████▍    | 27/50 [00:08<00:03,  6.29it/s] 58%|█████▊    | 29/50 [00:08<00:02,  7.09it/s] 60%|██████    | 30/50 [00:08<00:03,  6.22it/s] 64%|██████▍   | 32/50 [00:08<00:02,  6.90it/s] 68%|██████▊   | 34/50 [00:09<00:02,  7.56it/s] 72%|███████▏  | 36/50 [00:09<00:01,  9.17it/s] 76%|███████▌  | 38/50 [00:09<00:01,  6.80it/s] 82%|████████▏ | 41/50 [00:09<00:00,  9.47it/s] 86%|████████▌ | 43/50 [00:10<00:00,  8.37it/s] 90%|█████████ | 45/50 [00:10<00:00,  8.96it/s] 94%|█████████▍| 47/50 [00:10<00:00, 10.54it/s]100%|██████████| 50/50 [00:10<00:00,  4.73it/s]
+Traffic request rate: 8.0; Coefficient Variation: 1.0; Output len: 128
+============ Serving Benchmark Result ============
+Successful requests:                     50        
+Benchmark duration (s):                  10.56     
+Total input tokens:                      5095      
+Total generated tokens:                  5335      
+Request throughput (req/s):              4.73      
+Input token throughput (tok/s):          482.33    
+Output token throughput (tok/s):         505.05    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          154.93    
+Median TTFT (ms):                        102.85    
+P99 TTFT (ms):                           734.02    
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          38.57     
+Median TPOT (ms):                        38.08     
+P99 TPOT (ms):                           49.87     
+-------------Time Normalized Latency--------------
+Mean Nlatency (ms):                      39.94     
+Median Nlatency (ms):                    40.95     
+P80 Nlatency (ms):                       42.27     
+P90 Nlatency (ms):                       46.33     
+P95 Nlatency (ms):                       49.90     
+P99 Nlatency (ms):                       52.31     
+==================================================
+Aux Model Kendall's Tau: -0.0912959921217575 0.3949791836410592
+save to:  /hy-tmp/results/latency-opt-xxx-opt-1.3b-p0-r8.0-c1.0-t6.25-o128.pt
+
+DONE. JSON results in /hy-tmp/results:
+/hy-tmp/results/vllm-8.0qps-cv1.0-opt-1.3b-opt-xxx-20260611-074716.json
+/hy-tmp/results/vllm-8.0qps-cv1.0-opt-1.3b-fcfs-20260611-074157.json
+/hy-tmp/results/vllm-8.0qps-cv1.0-opt-1.3b-fcfs-20260611-073918.json

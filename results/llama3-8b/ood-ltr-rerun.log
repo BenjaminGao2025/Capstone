@@ -1,0 +1,39 @@
+waiting for server (pid=8872) ...
+server healthy, starting benchmark: sched=opt-xxx model=/hy-tmp/models/Meta-Llama-3-8B-Instruct n=500 rate=8 seed=0
+Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+Namespace(backend='vllm', base_url=None, host='localhost', port=3343, endpoint='/v1/completions', dataset='llama3-8b-sharegpt-test-t1-s0-8192.jsonl', model='/hy-tmp/models/Meta-Llama-3-8B-Instruct', tokenizer='/hy-tmp/models/Meta-Llama-3-8B-Instruct', best_of=1, use_beam_search=False, eval_max_tpot=False, output_len=-1, output_len_def='-1', request_time=-1.0, num_prompts=500, request_rate=8.0, ignore_limit=False, seed=0, trust_remote_code=False, disable_tqdm=False, schedule_type='opt-xxx', approx_type='full', approx_param=0, cv=1.0, metadata=None, result_dir='/hy-tmp/results')
+  0%|          | 0/500 [00:00<?, ?it/s]  0%|          | 1/500 [00:06<54:22,  6.54s/it]  0%|          | 2/500 [00:07<25:10,  3.03s/it]  1%|          | 4/500 [00:09<16:03,  1.94s/it]  1%|          | 5/500 [00:10<13:31,  1.64s/it]  1%|          | 6/500 [00:18<28:58,  3.52s/it]  1%|▏         | 7/500 [00:18<20:35,  2.51s/it]  2%|▏         | 8/500 [00:21<20:50,  2.54s/it]  2%|▏         | 9/500 [00:23<19:17,  2.36s/it]  2%|▏         | 10/500 [00:25<19:58,  2.45s/it]  2%|▏         | 11/500 [00:26<14:35,  1.79s/it]  2%|▏         | 12/500 [00:26<10:34,  1.30s/it]  3%|▎         | 13/500 [00:28<11:52,  1.46s/it]  3%|▎         | 14/500 [00:28<10:18,  1.27s/it]  3%|▎         | 15/500 [00:29<09:41,  1.20s/it]  3%|▎         | 16/500 [00:44<42:02,  5.21s/it] 11%|█▏        | 57/500 [00:44<02:05,  3.52it/s] 52%|█████▏    | 259/500 [00:44<00:09, 26.56it/s] 62%|██████▏   | 310/500 [00:47<00:08, 23.54it/s] 69%|██████▉   | 347/500 [00:49<00:06, 22.00it/s] 75%|███████▍  | 373/500 [00:51<00:06, 21.08it/s] 78%|███████▊  | 392/500 [00:52<00:05, 20.48it/s] 81%|████████  | 406/500 [00:53<00:04, 20.02it/s] 83%|████████▎ | 416/500 [00:53<00:04, 19.67it/s] 85%|████████▍ | 424/500 [00:54<00:03, 19.38it/s] 86%|████████▌ | 430/500 [00:54<00:03, 19.17it/s] 87%|████████▋ | 435/500 [00:54<00:03, 18.95it/s] 88%|████████▊ | 439/500 [00:55<00:03, 18.75it/s] 89%|████████▊ | 443/500 [00:55<00:03, 18.52it/s] 89%|████████▉ | 446/500 [00:55<00:02, 18.34it/s] 90%|████████▉ | 449/500 [00:55<00:02, 18.23it/s] 90%|█████████ | 452/500 [00:56<00:04, 11.23it/s] 91%|█████████ | 454/500 [00:57<00:05,  7.99it/s] 91%|█████████ | 456/500 [00:57<00:05,  7.37it/s] 92%|█████████▏| 458/500 [00:57<00:05,  7.91it/s] 92%|█████████▏| 460/500 [00:57<00:04,  8.49it/s] 92%|█████████▏| 462/500 [00:58<00:04,  7.81it/s] 93%|█████████▎| 463/500 [00:58<00:05,  6.49it/s] 93%|█████████▎| 465/500 [00:58<00:04,  7.93it/s] 93%|█████████▎| 467/500 [00:58<00:03,  9.45it/s] 94%|█████████▍| 469/500 [00:58<00:02, 11.00it/s] 94%|█████████▍| 471/500 [00:58<00:02, 12.40it/s] 95%|█████████▍| 473/500 [00:59<00:03,  8.54it/s] 95%|█████████▌| 475/500 [00:59<00:03,  7.19it/s] 95%|█████████▌| 477/500 [01:00<00:04,  5.64it/s] 96%|█████████▌| 478/500 [01:00<00:03,  5.81it/s] 96%|█████████▌| 479/500 [01:00<00:04,  4.45it/s] 96%|█████████▌| 480/500 [01:01<00:06,  3.13it/s] 96%|█████████▋| 482/500 [01:01<00:03,  4.55it/s] 97%|█████████▋| 484/500 [01:01<00:02,  6.18it/s] 97%|█████████▋| 486/500 [01:01<00:01,  7.94it/s] 98%|█████████▊| 488/500 [01:01<00:01,  9.67it/s] 98%|█████████▊| 490/500 [01:02<00:01,  5.68it/s] 98%|█████████▊| 492/500 [01:02<00:01,  6.92it/s] 99%|█████████▉| 494/500 [01:03<00:00,  6.27it/s] 99%|█████████▉| 496/500 [01:03<00:00,  7.34it/s]100%|█████████▉| 498/500 [01:03<00:00,  8.91it/s]100%|██████████| 500/500 [01:03<00:00, 10.46it/s]100%|██████████| 500/500 [01:03<00:00,  7.87it/s]
+Traffic request rate: 8.0; Coefficient Variation: 1.0; Output len: -1
+============ Serving Benchmark Result ============
+Successful requests:                     15        
+Benchmark duration (s):                  63.53     
+Total input tokens:                      1212      
+Total generated tokens:                  778       
+Request throughput (req/s):              0.24      
+Input token throughput (tok/s):          19.08     
+Output token throughput (tok/s):         12.25     
+---------------Time to First Token----------------
+Mean TTFT (ms):                          352.48    
+Median TTFT (ms):                        335.50    
+P99 TTFT (ms):                           747.68    
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          133.63    
+Median TPOT (ms):                        137.15    
+P99 TPOT (ms):                           173.08    
+-------------Time Normalized Latency--------------
+Mean Nlatency (ms):                      141.15    
+Median Nlatency (ms):                    143.68    
+P80 Nlatency (ms):                       165.28    
+P90 Nlatency (ms):                       174.30    
+P95 Nlatency (ms):                       179.04    
+P99 Nlatency (ms):                       181.98    
+==================================================
+Aux Model Kendall's Tau: -0.3636405261167026 0.059724872589944966
+save to:  /hy-tmp/results/latency-opt-xxx-Meta-Llama-3-8B-Instruct-p0-r8.0-c1.0-t62.5-o-1.pt
+
+DONE. JSON results in /hy-tmp/results:
+/hy-tmp/results/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-111618.json
+/hy-tmp/results/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-111049-ood-sharegpt.json
+/hy-tmp/results/vllm-32.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-110139.json
+renamed -> /hy-tmp/results/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-111618-ood-sharegpt.json
+OOD_LTR_DONE

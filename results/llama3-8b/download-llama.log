@@ -1,0 +1,18 @@
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files:  10%|█         | 1/10 [00:01<00:10,  1.16s/it]Fetching 10 files:  30%|███       | 3/10 [09:18<24:08, 206.89s/it]Fetching 10 files:  50%|█████     | 5/10 [09:28<08:34, 102.93s/it]Fetching 10 files: 100%|██████████| 10/10 [09:28<00:00, 56.83s/it]
+downloaded to: /hy-tmp/models/Meta-Llama-3-8B-Instruct
+=== 校验 ===
+total 15G
+-rw-r--r-- 1 root root  654 Jun 12 10:31 config.json
+-rw-r--r-- 1 root root  187 Jun 12 10:31 generation_config.json
+-rw-r--r-- 1 root root 4.7G Jun 12 10:40 model-00001-of-00004.safetensors
+-rw-r--r-- 1 root root 4.7G Jun 12 10:39 model-00002-of-00004.safetensors
+-rw-r--r-- 1 root root 4.6G Jun 12 10:40 model-00003-of-00004.safetensors
+-rw-r--r-- 1 root root 1.1G Jun 12 10:34 model-00004-of-00004.safetensors
+-rw-r--r-- 1 root root  24K Jun 12 10:31 model.safetensors.index.json
+-rw-r--r-- 1 root root   73 Jun 12 10:31 special_tokens_map.json
+-rw-r--r-- 1 root root 8.7M Jun 12 10:31 tokenizer.json
+-rw-r--r-- 1 root root  50K Jun 12 10:31 tokenizer_config.json
+15G	/hy-tmp/models/Meta-Llama-3-8B-Instruct/
+8.0K	/hy-tmp/huggingface/
+/dev/nvme0n1p1   50G   17G   34G  33% /hy-tmp
+DOWNLOAD_DONE(此后所有 serve/benchmark 都用本地路径,不再需要 token)

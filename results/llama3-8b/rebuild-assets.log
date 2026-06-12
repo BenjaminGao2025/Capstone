@@ -1,0 +1,11 @@
+trace ok: lmsys-Meta-Llama-3-8B-Instruct-t1.0-s0-l8192-c10000-rFalse.jsonl
+trace ok: lmsys-Meta-Llama-3-8B-Instruct-t1.0-s0-l8192-c20000:30000-rFalse.jsonl
+trace ok: llama3-8b-sharegpt-test-t1-s0-8192.jsonl
+trace ok: llama3-8b-sharegpt-train-t1-s0-8192.jsonl
+trace ok: llama3-8b-alpaca-test-t1-s0-8192.jsonl
+trace ok: llama3-8b-alpaca-train-t1-s0-8192.jsonl
+predictor ok: opt-125m-llama3-8b-lmsys-score-trainbucket10-b32
+predictor ok: opt-125m-llama3-8b-lmsys-class-trainbucket820-b32
+predictor ok: opt-125m-llama3-8b-sharegpt-score-trainbucket10-b32
+predictor ok: opt-125m-llama3-8b-sharegpt-class-trainbucket820-b32
+ASSETS_DONE

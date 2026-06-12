@@ -1,0 +1,35 @@
+waiting for server (pid=9994) ...
+server healthy, starting benchmark: sched=fcfs model=facebook/opt-1.3b n=50 rate=8 seed=0
+/usr/local/lib/python3.11/dist-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+Namespace(backend='vllm', base_url=None, host='localhost', port=3343, endpoint='/v1/completions', dataset='lmsys-Meta-Llama-3-8B-Instruct-t1.0-s0-l8192-c10000-rFalse.jsonl', model='facebook/opt-1.3b', tokenizer='facebook/opt-1.3b', best_of=1, use_beam_search=False, eval_max_tpot=False, output_len=128, output_len_def='-1', request_time=-1.0, num_prompts=50, request_rate=8.0, ignore_limit=False, seed=0, trust_remote_code=False, disable_tqdm=False, schedule_type='fcfs', approx_type='full', approx_param=0, cv=1.0, metadata=None, result_dir='/hy-tmp/results')
+  0%|          | 0/50 [00:00<?, ?it/s]  2%|▏         | 1/50 [00:08<06:40,  8.18s/it]  4%|▍         | 2/50 [00:08<02:49,  3.53s/it]  6%|▌         | 3/50 [00:08<01:35,  2.03s/it]  8%|▊         | 4/50 [00:08<00:59,  1.28s/it] 12%|█▏        | 6/50 [00:09<00:28,  1.54it/s] 16%|█▌        | 8/50 [00:09<00:18,  2.30it/s] 18%|█▊        | 9/50 [00:09<00:20,  2.04it/s] 20%|██        | 10/50 [00:10<00:16,  2.37it/s] 22%|██▏       | 11/50 [00:12<00:32,  1.21it/s] 24%|██▍       | 12/50 [00:12<00:27,  1.39it/s] 28%|██▊       | 14/50 [00:12<00:16,  2.17it/s] 30%|███       | 15/50 [00:13<00:16,  2.17it/s] 44%|████▍     | 22/50 [00:13<00:04,  6.72it/s] 90%|█████████ | 45/50 [00:13<00:00, 26.35it/s]100%|██████████| 50/50 [00:13<00:00,  3.68it/s]
+Traffic request rate: 8.0; Coefficient Variation: 1.0; Output len: 128
+============ Serving Benchmark Result ============
+Successful requests:                     50        
+Benchmark duration (s):                  13.59     
+Total input tokens:                      5095      
+Total generated tokens:                  5341      
+Request throughput (req/s):              3.68      
+Input token throughput (tok/s):          374.88    
+Output token throughput (tok/s):         392.99    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          2740.39   
+Median TTFT (ms):                        2200.04   
+P99 TTFT (ms):                           5749.86   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          69.49     
+Median TPOT (ms):                        57.89     
+P99 TPOT (ms):                           222.47    
+-------------Time Normalized Latency--------------
+Mean Nlatency (ms):                      118.59    
+Median Nlatency (ms):                    82.78     
+P80 Nlatency (ms):                       103.50    
+P90 Nlatency (ms):                       284.97    
+P95 Nlatency (ms):                       357.13    
+P99 Nlatency (ms):                       562.97    
+==================================================
+save to:  /hy-tmp/results/latency-fcfs-opt-1.3b-p0-r8.0-c1.0-t6.25-o128.pt
+
+DONE. JSON results in /hy-tmp/results:
+/hy-tmp/results/vllm-8.0qps-cv1.0-opt-1.3b-fcfs-20260611-073918.json

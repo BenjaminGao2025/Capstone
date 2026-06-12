@@ -1,3 +1,177 @@
+diff --git a/benchmarks/benchmark_serving_real.py b/benchmarks/benchmark_serving_real.py
+index 73d6a52..7c2c4fd 100644
+--- a/benchmarks/benchmark_serving_real.py
++++ b/benchmarks/benchmark_serving_real.py
+@@ -264,7 +264,7 @@ async def benchmark(
+     else:
+         raise ValueError(f"Unknown backend: {backend}")
+ 
+-    if schedule_type == "fcfs" or schedule_type == "fcfs-origin" or schedule_type.startswith("sjf-predictor-") or schedule_type.startswith("mlfq") or schedule_type.startswith("predictor-") or schedule_type.startswith("opt") or schedule_type.startswith("xpt") or schedule_type.startswith("tpt"):
++    if schedule_type == "fcfs" or schedule_type == "fcfs-origin" or schedule_type.startswith("sjf-predictor-") or schedule_type.startswith("mlfq") or schedule_type.startswith("predictor-") or schedule_type.startswith("opt") or schedule_type.startswith("xpt") or schedule_type.startswith("tpt") or schedule_type.startswith("ipt"):
+ 
+         pass
+     elif schedule_type == "sjf" or schedule_type.startswith("srtf") or schedule_type.startswith("sjf-preempt-") or schedule_type.startswith("sjf-ranking-") or schedule_type.startswith("sjf-file-") : 
+@@ -332,8 +332,10 @@ async def benchmark(
+ 
+     benchmark_start_time = time.perf_counter()
+     tasks = []
++    send_ts = []  # per-request arrival (send) time relative to benchmark start
+     async for request in get_request(input_requests, request_rate, cv):
+         prompt, prompt_len, use_output_len, est_tokens, prerun_len = request
++        send_ts.append(time.perf_counter() - benchmark_start_time)
+         #print("igNORE: ", output_len == -1, eval(output_len_def) != -1, output_len == -1 or eval(output_len_def) != -1, output_len_def)
+         request_func_input = RequestFuncInput(
+             model=model_id,
+@@ -401,14 +403,16 @@ async def benchmark(
+     print("{:<40} {:<10.2f}".format("P99 Nlatency (ms):", np.percentile(nlatencies, 99) * 1000))
+     print("=" * 50)
+ 
++    # pred/aux scores 只含成功请求,actual_output_lens 含全部(失败补 0):用 success mask 对齐
++    _ok_lens = [l for l, o in zip(actual_output_lens, outputs) if o.success]
+     if est_lens[0] is not None:
+         tau, p = scipy.stats.kendalltau(est_lens, actual_output_lens)
+         print(f"Est Kendall's Tau: {tau} {p}")
+     if pred_scores[0] is not None:
+-        tau, p = scipy.stats.kendalltau(pred_scores, actual_output_lens)
++        tau, p = scipy.stats.kendalltau(pred_scores, _ok_lens)
+         print(f"Pred Kendall's Tau: {tau} {p}")
+     if aux_model_scores[0] is not None:
+-        tau, p = scipy.stats.kendalltau(aux_model_scores, actual_output_lens)
++        tau, p = scipy.stats.kendalltau(aux_model_scores, _ok_lens)
+         print(f"Aux Model Kendall's Tau: {tau} {p}")
+ 
+ 
+@@ -431,9 +435,25 @@ async def benchmark(
+         "output_lens": actual_output_lens,
+         "ttfts": [output.ttft for output in outputs],
+         "itls": [output.itl for output in outputs],
++        "send_ts": send_ts,
++        "latencies": [output.latency for output in outputs],
++        "first_token_ts": [s + output.ttft for s, output in zip(send_ts, outputs)],
++        "completion_ts": [s + output.latency for s, output in zip(send_ts, outputs)],
+         "generated_texts": [output.generated_text for output in outputs],
+         "errors": [output.error for output in outputs],
++        "aux_model_scores": aux_model_scores,
++        "pred_scores": pred_scores,
+     }
++    # 预测器排序质量(LTR 失效证据链):in-dist Tau 高 / OOD Tau 掉
++    # scores 只含成功请求,与 _ok_lens(success 过滤后的真实长度)对齐
++    if aux_model_scores[0] is not None:
++        _tau, _p = scipy.stats.kendalltau(aux_model_scores, _ok_lens)
++        result["aux_kendall_tau"] = float(_tau)
++        result["aux_kendall_p"] = float(_p)
++    if pred_scores[0] is not None:
++        _tau, _p = scipy.stats.kendalltau(pred_scores, _ok_lens)
++        result["pred_kendall_tau"] = float(_tau)
++        result["pred_kendall_p"] = float(_p)
+ 
+     if eval_max_tpot:
+         max_tpots = []
+diff --git a/vllm/core/scheduler.py b/vllm/core/scheduler.py
+index 1a56ad6..f3bd780 100644
+--- a/vllm/core/scheduler.py
++++ b/vllm/core/scheduler.py
+@@ -327,6 +327,13 @@ class Scheduler:
+             self._get_ordered_requests = self._get_opt_ordered_requests
+             self._update_priority = self._update_opt_priority
+             self.need_score = True
++        elif self.schedule_type.startswith("ipt"):
++            # internal-predictor mode: scores come from the worker at prefill
++            # completion (main-model hidden state + tiny head), no aux engine
++            self._schedule = self._general_schedule
++            self._get_ordered_requests = self._get_ipt_ordered_requests
++            self._update_priority = self._update_opt_priority
++            self.need_score = False
+         else:
+             assert False, f"Not Supported Schedule Type {self.schedule_type}"
+ 
+@@ -1002,6 +1009,33 @@ class Scheduler:
+     def _update_opt_priority(self):
+         pass
+ 
++    def _get_ipt_ordered_requests(self):
++        # v2 policy. v1 ("unscored first") let every new arrival preempt
++        # running work; on long-sequence traces (ShareGPT) the resulting
++        # preemption churn exhausted the CPU swap pool and killed the engine.
++        # v2 tiers:
++        #   0  starvation valve: unscored waiting > IPT_STARVE_S (default 30s)
++        #   1  RUNNING scored, shortest-predicted-first  (never preempted by
++        #      new arrivals -> bounded churn)
++        #   2  unscored, FCFS: admitted only into leftover budget
++        #   3  scored but not running (swapped/preempted), by score
++        starve_s = float(os.environ.get("IPT_STARVE_S", "30"))
++        now = time.time()
++        running_ids = set(id(r) for r in self.running)
++
++        def _key(req):
++            scored = req.aux_model_score is not None
++            if not scored and now - req.metrics.arrival_time > starve_s:
++                return (0, req.metrics.arrival_time, 0.0)
++            if scored and id(req) in running_ids:
++                return (1, 0.0, -req.aux_model_score)
++            if not scored:
++                return (2, req.metrics.arrival_time, 0.0)
++            return (3, 0.0, -req.aux_model_score)
++        return list(sorted(
++            list(self.waiting) + list(self.running) + list(self.swapped),
++            key=_key))
++
+     def _get_ropt_ordered_requests(self):
+ 
+         need_aux_scores = []
+diff --git a/vllm/engine/llm_engine.py b/vllm/engine/llm_engine.py
+index 831582c..0ba9cff 100644
+--- a/vllm/engine/llm_engine.py
++++ b/vllm/engine/llm_engine.py
+@@ -239,7 +239,33 @@ class LLMEngine:
+                 llm_model_executor=self.model_executor,
+             )
+         else:
+-            self.scheduler.aux_model = None
++            import os as _os
++            _score_file = _os.environ.get("IPT_SCORE_FILE", "")
++            if _score_file:
++                # head-vs-policy ablation: ORIGINAL opt scheduling (same
++                # pre-prefill timing and sorting), scores precomputed by our
++                # head and looked up by prompt instead of running an AUXLLM.
++                import json as _json
++
++                class _FileAuxScorer:
++                    def __init__(self, path):
++                        with open(path) as f:
++                            self._table = _json.load(f)
++                        self._miss = 0
++
++                    def obtain_aux_scores(self, reqs):
++                        for r in reqs:
++                            s = self._table.get(r.prompt)
++                            if s is None:
++                                self._miss += 1
++                                s = 0.0
++                                print(f"FileAuxScorer MISS #{self._miss}: {r.prompt[:60]!r}")
++                            r.set_aux_model_score(s)
++
++                self.scheduler.aux_model = _FileAuxScorer(_score_file)
++                print(f"FileAuxScorer loaded: {_score_file}")
++            else:
++                self.scheduler.aux_model = None
+ 
+     def _initialize_kv_caches(self) -> None:
+         """Initialize the KV cache in the worker(s).
+@@ -490,8 +516,12 @@ class LLMEngine:
+             seq_group = scheduled_seq_group.seq_group
+             
+             assert len(outputs) == 1
+-            if outputs[0].pred_score is not None: 
++            if outputs[0].pred_score is not None:
+                 seq_group.set_pred_score(outputs[0].pred_score)
++            # IPT: first score (= prefill-completion hidden state) sticks
++            if (outputs[0].aux_model_score is not None
++                    and seq_group.aux_model_score is None):
++                seq_group.set_aux_model_score(float(outputs[0].aux_model_score))
+ 
+             seq_group.update_num_computed_tokens(
+                 scheduled_seq_group.token_chunk_size)
 diff --git a/vllm/model_executor/models/llama.py b/vllm/model_executor/models/llama.py
 index c642c1a..db6ef79 100644
 --- a/vllm/model_executor/models/llama.py
@@ -69,128 +243,3 @@ index e1691d1..47caab0 100644
          )
          return output
  
-diff --git a/vllm/engine/llm_engine.py b/vllm/engine/llm_engine.py
-index 831582c..524a34d 100644
---- a/vllm/engine/llm_engine.py
-+++ b/vllm/engine/llm_engine.py
-@@ -490,8 +490,12 @@ class LLMEngine:
-             seq_group = scheduled_seq_group.seq_group
-             
-             assert len(outputs) == 1
--            if outputs[0].pred_score is not None: 
-+            if outputs[0].pred_score is not None:
-                 seq_group.set_pred_score(outputs[0].pred_score)
-+            # IPT: first score (= prefill-completion hidden state) sticks
-+            if (outputs[0].aux_model_score is not None
-+                    and seq_group.aux_model_score is None):
-+                seq_group.set_aux_model_score(float(outputs[0].aux_model_score))
- 
-             seq_group.update_num_computed_tokens(
-                 scheduled_seq_group.token_chunk_size)
-diff --git a/vllm/core/scheduler.py b/vllm/core/scheduler.py
-index 1a56ad6..926dc9d 100644
---- a/vllm/core/scheduler.py
-+++ b/vllm/core/scheduler.py
-@@ -327,6 +327,13 @@ class Scheduler:
-             self._get_ordered_requests = self._get_opt_ordered_requests
-             self._update_priority = self._update_opt_priority
-             self.need_score = True
-+        elif self.schedule_type.startswith("ipt"):
-+            # internal-predictor mode: scores come from the worker at prefill
-+            # completion (main-model hidden state + tiny head), no aux engine
-+            self._schedule = self._general_schedule
-+            self._get_ordered_requests = self._get_ipt_ordered_requests
-+            self._update_priority = self._update_opt_priority
-+            self.need_score = False
-         else:
-             assert False, f"Not Supported Schedule Type {self.schedule_type}"
- 
-@@ -1002,6 +1009,19 @@ class Scheduler:
-     def _update_opt_priority(self):
-         pass
- 
-+    def _get_ipt_ordered_requests(self):
-+        # Two-phase policy: requests without a score (prefill not finished)
-+        # run first in FCFS order so the engine obtains their score quickly;
-+        # scored requests run shortest-predicted-first (high score first),
-+        # reusing the same aux_model_score field the opt mode sorts on.
-+        def _key(req):
-+            if req.aux_model_score is None:
-+                return (0, req.metrics.arrival_time, 0.0)
-+            return (1, 0.0, -req.aux_model_score)
-+        return list(sorted(
-+            list(self.waiting) + list(self.running) + list(self.swapped),
-+            key=_key))
-+
-     def _get_ropt_ordered_requests(self):
- 
-         need_aux_scores = []
-diff --git a/benchmarks/benchmark_serving_real.py b/benchmarks/benchmark_serving_real.py
-index 73d6a52..7c2c4fd 100644
---- a/benchmarks/benchmark_serving_real.py
-+++ b/benchmarks/benchmark_serving_real.py
-@@ -264,7 +264,7 @@ async def benchmark(
-     else:
-         raise ValueError(f"Unknown backend: {backend}")
- 
--    if schedule_type == "fcfs" or schedule_type == "fcfs-origin" or schedule_type.startswith("sjf-predictor-") or schedule_type.startswith("mlfq") or schedule_type.startswith("predictor-") or schedule_type.startswith("opt") or schedule_type.startswith("xpt") or schedule_type.startswith("tpt"):
-+    if schedule_type == "fcfs" or schedule_type == "fcfs-origin" or schedule_type.startswith("sjf-predictor-") or schedule_type.startswith("mlfq") or schedule_type.startswith("predictor-") or schedule_type.startswith("opt") or schedule_type.startswith("xpt") or schedule_type.startswith("tpt") or schedule_type.startswith("ipt"):
- 
-         pass
-     elif schedule_type == "sjf" or schedule_type.startswith("srtf") or schedule_type.startswith("sjf-preempt-") or schedule_type.startswith("sjf-ranking-") or schedule_type.startswith("sjf-file-") : 
-@@ -332,8 +332,10 @@ async def benchmark(
- 
-     benchmark_start_time = time.perf_counter()
-     tasks = []
-+    send_ts = []  # per-request arrival (send) time relative to benchmark start
-     async for request in get_request(input_requests, request_rate, cv):
-         prompt, prompt_len, use_output_len, est_tokens, prerun_len = request
-+        send_ts.append(time.perf_counter() - benchmark_start_time)
-         #print("igNORE: ", output_len == -1, eval(output_len_def) != -1, output_len == -1 or eval(output_len_def) != -1, output_len_def)
-         request_func_input = RequestFuncInput(
-             model=model_id,
-@@ -401,14 +403,16 @@ async def benchmark(
-     print("{:<40} {:<10.2f}".format("P99 Nlatency (ms):", np.percentile(nlatencies, 99) * 1000))
-     print("=" * 50)
- 
-+    # pred/aux scores 只含成功请求,actual_output_lens 含全部(失败补 0):用 success mask 对齐
-+    _ok_lens = [l for l, o in zip(actual_output_lens, outputs) if o.success]
-     if est_lens[0] is not None:
-         tau, p = scipy.stats.kendalltau(est_lens, actual_output_lens)
-         print(f"Est Kendall's Tau: {tau} {p}")
-     if pred_scores[0] is not None:
--        tau, p = scipy.stats.kendalltau(pred_scores, actual_output_lens)
-+        tau, p = scipy.stats.kendalltau(pred_scores, _ok_lens)
-         print(f"Pred Kendall's Tau: {tau} {p}")
-     if aux_model_scores[0] is not None:
--        tau, p = scipy.stats.kendalltau(aux_model_scores, actual_output_lens)
-+        tau, p = scipy.stats.kendalltau(aux_model_scores, _ok_lens)
-         print(f"Aux Model Kendall's Tau: {tau} {p}")
- 
- 
-@@ -431,9 +435,25 @@ async def benchmark(
-         "output_lens": actual_output_lens,
-         "ttfts": [output.ttft for output in outputs],
-         "itls": [output.itl for output in outputs],
-+        "send_ts": send_ts,
-+        "latencies": [output.latency for output in outputs],
-+        "first_token_ts": [s + output.ttft for s, output in zip(send_ts, outputs)],
-+        "completion_ts": [s + output.latency for s, output in zip(send_ts, outputs)],
-         "generated_texts": [output.generated_text for output in outputs],
-         "errors": [output.error for output in outputs],
-+        "aux_model_scores": aux_model_scores,
-+        "pred_scores": pred_scores,
-     }
-+    # 预测器排序质量(LTR 失效证据链):in-dist Tau 高 / OOD Tau 掉
-+    # scores 只含成功请求,与 _ok_lens(success 过滤后的真实长度)对齐
-+    if aux_model_scores[0] is not None:
-+        _tau, _p = scipy.stats.kendalltau(aux_model_scores, _ok_lens)
-+        result["aux_kendall_tau"] = float(_tau)
-+        result["aux_kendall_p"] = float(_p)
-+    if pred_scores[0] is not None:
-+        _tau, _p = scipy.stats.kendalltau(pred_scores, _ok_lens)
-+        result["pred_kendall_tau"] = float(_tau)
-+        result["pred_kendall_p"] = float(_p)
- 
-     if eval_max_tpot:
-         max_tpots = []

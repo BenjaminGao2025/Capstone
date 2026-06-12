@@ -1,0 +1,29 @@
+Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:11,  3.87s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:07<00:07,  3.86s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:11<00:03,  3.72s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  2.62s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  3.06s/it]
+lmsys: 100/500
+lmsys: 200/500
+lmsys: 300/500
+lmsys: 400/500
+lmsys: 500/500
+== lmsys (OPT-125M anchor tau = -0.642) ==
+   first_tok_entropy  tau=+0.1742  p=6.25e-09
+   mean_entropy       tau=+0.0652  p=2.97e-02
+   entropy_std        tau=+0.0046  p=8.77e-01
+   mean_nll           tau=-0.0395  p=1.87e-01
+sharegpt: 100/500
+sharegpt: 200/500
+sharegpt: 300/500
+sharegpt: 400/500
+sharegpt: 500/500
+== sharegpt (OPT-125M anchor tau = -0.42) ==
+   first_tok_entropy  tau=-0.0233  p=4.36e-01
+   mean_entropy       tau=+0.0875  p=3.45e-03
+   entropy_std        tau=+0.0673  p=2.46e-02
+   mean_nll           tau=+0.1090  p=2.72e-04
+
+== verdict helper ==
+   first_tok_entropy  |tau| in=0.174 ood=0.023 drop=87%  (OPT-125M: in=0.642 ood=0.420 drop=35%)
+   mean_entropy       |tau| in=0.065 ood=0.088 drop=-34%  (OPT-125M: in=0.642 ood=0.420 drop=35%)
+   entropy_std        |tau| in=0.005 ood=0.067 drop=-1355%  (OPT-125M: in=0.642 ood=0.420 drop=35%)
+   mean_nll           |tau| in=0.040 ood=0.109 drop=-176%  (OPT-125M: in=0.642 ood=0.420 drop=35%)
+SIGNALS_DONE -> /hy-tmp/results/internal-signals-tau.json

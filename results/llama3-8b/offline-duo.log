@@ -1,0 +1,34 @@
+INTEGRITY_OK 291 tensors
+=== cross_tau_matrix ===
+Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+/usr/local/lib/python3.11/dist-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+loaded lmsys: 500 prompts
+loaded sharegpt: 500 prompts
+loaded alpaca: 500 prompts
+lmsys-score      x lmsys     tau=-0.6402 p=3.42e-101
+lmsys-score      x sharegpt  tau=-0.4200 p=1.05e-44
+lmsys-score      x alpaca    tau=-0.5790 p=2.90e-83
+sharegpt-score   x lmsys     tau=-0.4798 p=1.14e-57
+sharegpt-score   x sharegpt  tau=-0.5156 p=1.78e-66
+sharegpt-score   x alpaca    tau=-0.5616 p=1.87e-78
+
+=== matrix (|tau|, rows=predictor, cols=trace) ===
+                        lmsys   sharegpt     alpaca
+lmsys-score             0.640      0.420      0.579
+sharegpt-score          0.480      0.516      0.562
+MATRIX_DONE -> /hy-tmp/results/cross-tau-matrix.json
+=== internal_signals ===
+Special tokens have been added in the vocabulary, make sure the associated word embeddings are fine-tuned or trained.
+Traceback (most recent call last):
+  File "/hy-tmp/scripts/internal_signals_tau.py", line 101, in <module>
+    main()
+  File "/hy-tmp/scripts/internal_signals_tau.py", line 62, in main
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/transformers/models/auto/auto_factory.py", line 563, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/transformers/modeling_utils.py", line 3086, in from_pretrained
+    raise ImportError(
+ImportError: Using `low_cpu_mem_usage=True` or a `device_map` requires Accelerate: `pip install accelerate`
