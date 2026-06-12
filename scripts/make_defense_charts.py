@@ -40,7 +40,8 @@ def load(pattern):
 
 def indist(rate, arm):
     # sweep files only (exclude the rate-8 probe runs by timestamp prefix 10*)
-    pat = f"vllm-{rate}.0qps-*-{arm}-20260611-1[01]*.json"
+    pat = f"vllm-{rate}.0qps-*-{arm}-20260611-1[01]*.json" if arm != "tpt-class10-xxx" \
+        else f"vllm-{rate}.0qps-*-{arm}-*.json"
     paths = [p for p in glob.glob(os.path.join(RES, pat)) if "ood" not in p]
     assert len(paths) == 1, f"{pat} -> {paths}"
     return load(os.path.basename(paths[0]))
@@ -96,7 +97,10 @@ def fig_main(sweep):
     for ax, key, label in [(axes[0], "mean_ttft", "Mean TTFT (s)"),
                            (axes[1], "mean_lat", "Mean request latency (s)")]:
         ax.plot(RATES, [sweep[r]["fcfs"][key] for r in RATES], "o-", color=C_FCFS, label="FCFS", lw=2)
-        ax.plot(RATES, [sweep[r]["ltr"][key] for r in RATES], "s-", color=C_LTR, label="LTR (ours, repro)", lw=2)
+        if "cls" in sweep[RATES[0]]:
+            ax.plot(RATES, [sweep[r]["cls"][key] for r in RATES], "^-", color="#F9A825",
+                    label="Classification (τ -0.30)", lw=2)
+        ax.plot(RATES, [sweep[r]["ltr"][key] for r in RATES], "s-", color=C_LTR, label="LTR (τ -0.64)", lw=2)
         ax.set_xlabel("Request rate (req/s)")
         ax.set_ylabel(label)
         ax.set_xscale("log", base=2)
@@ -132,6 +136,11 @@ def fig_cdf(f, l, title, fname):
 def main():
     os.makedirs(OUT, exist_ok=True)
     sweep = {r: {"fcfs": indist(r, "fcfs"), "ltr": indist(r, "opt-xxx")} for r in RATES}
+    try:
+        for r in RATES:
+            sweep[r]["cls"] = indist(r, "tpt-class10-xxx")
+    except AssertionError:
+        pass  # class arm not run yet — fall back to two lines
     ood4f, ood4l = ood(4, "fcfs"), ood(4, "opt-xxx")
 
     fig_motivation(sweep[4]["fcfs"], sweep[4]["ltr"], ood4f, ood4l)
