@@ -1,0 +1,14 @@
+gate1 on /hy-tmp/features_prefix (cuda)
+k=128 last32    lmsys=0.660±0.004  sharegpt=0.368±0.006  alpaca=0.688±0.004
+k=128 mean16    lmsys=0.677±0.004  sharegpt=0.403±0.011  alpaca=0.651±0.005
+k=256 last32    lmsys=0.681±0.004  sharegpt=0.371±0.011  alpaca=0.689±0.005
+k=256 mean16    lmsys=0.678±0.005  sharegpt=0.406±0.010  alpaca=0.651±0.002
+k=512 last32    lmsys=0.705±0.006  sharegpt=0.379±0.019  alpaca=0.691±0.006
+k=512 mean16    lmsys=0.678±0.004  sharegpt=0.415±0.016  alpaca=0.652±0.006
+
+anchors: full-prompt lmsys=0.712 sharegpt=0.445 alpaca=0.686
+         OPT-125M    lmsys=0.64 sharegpt=0.42 alpaca=0.579
+
+k=256 last32: lmsys 0.681 (need >= 0.662: ok), sharegpt 0.371 (need >= 0.420: FAIL)
+GATE1_VERDICT: FAIL
+GATE1_DONE
