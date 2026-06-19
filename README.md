@@ -153,6 +153,67 @@ is expected: the predictor was trained to rank Llama-3-8B output lengths, but
 its ranking on `facebook/opt-1.3b` is effectively noise (Kendall's Tau about
 -0.09), so LTR behaves approximately like random scheduling in this smoke test.
 
+## Related-Work Trace-Driven Evaluation
+
+This part evaluates two related scheduling directions using the Llama-3-8B
+serving trace. The goal is not to claim a full reproduction of either original
+system. Instead, the trace-driven tests check whether the core scheduling ideas
+show useful latency trends under the same Llama workload used by the base
+reproduction.
+
+### SLO-Aware Scheduling
+
+`SLO-Aware Scheduling for Large Language Model Inferences` adds
+application-level latency objectives, such as TTFT, TPOT, and end-to-end SLOs,
+to request priority. In the trace-driven test, an SLO-aware priority policy is
+compared with FCFS.
+
+| Request rate | FCFS avg latency | SLO-aware avg latency |
+|-------------:|-----------------:|----------------------:|
+| 2 | 3452 | 2461 |
+| 4 | 3509 | 1943 |
+| 8 | 3538 | 1519 |
+| 16 | 3552 | 1318 |
+
+![SLO-Aware trace-driven latency](figures/slo_aware_trace_latency.png)
+
+The SLO-aware policy reduces average latency in this Llama-3-8B trace-driven
+test. This suggests that SLO urgency can be added as an extra ranking signal on
+top of output-length-aware scheduling.
+
+### Apt-Serve
+
+`Apt-Serve: Adaptive Request Scheduling on Hybrid Cache for Scalable LLM
+Inference Serving` adds system-level awareness, especially batch composition
+and cache pressure. In the trace-driven test, an Apt-Serve-style adaptive
+hybrid policy is compared with a FCFS-KV baseline.
+
+| Request rate | FCFS-KV avg latency | Adaptive-Hybrid avg latency |
+|-------------:|--------------------:|----------------------------:|
+| 2 | 2187 | 1738 |
+| 4 | 2249 | 1370 |
+| 8 | 2279 | 985 |
+| 16 | 2295 | 750 |
+
+![Apt-Serve trace-driven latency](figures/aptserve_trace_latency.png)
+
+The adaptive hybrid policy also reduces average latency, especially at higher
+request rates. It is promising, but it requires deeper changes to cache
+management and batching logic than a pure ranking-score extension.
+
+### Takeaway
+
+The base paper's LTR scheduler remains the core method. Among the two
+related-work directions tested here, SLO-aware priority is the easiest to
+combine with LTR because it can be introduced as an additional ranking signal:
+
+```text
+final_score = LTR_score + alpha * SLO_urgency + beta * uncertainty_signal
+```
+
+Apt-Serve-style cache and batch awareness is also useful, but it is better
+treated as a later system-level extension.
+
 ## Current Status
 
 The formal `Meta-Llama-3-8B-Instruct` reproduction is complete: the
