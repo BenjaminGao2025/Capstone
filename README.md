@@ -164,6 +164,42 @@ at rate 8 the mis-ranked LTR arm exhausts swap and crashes the engine. See the
 the earlier
 [reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md).
 
+## Cache-Aware Prefix Analysis
+
+This branch adds a trace-level analysis for cache-aware prefix scoring. The
+method measures how often requests reuse the same prompt prefix and converts
+that signal into a cache-aware scheduling score.
+
+The LMSYS trace probe below analyzes the first 500 requests and finds measurable
+shared-prefix structure. The strongest setting is `prefix_words = 16`, with a
+14.6% cache hit rate, 73 reused-prefix requests, a largest shared group of 25,
+and cache-only quality of 0.236.
+
+![LMSYS trace cache-prefix summary](figures/cache_prefix_lmsys_trace_summary.svg)
+
+The controlled ratio sweep varies the amount of shared setup context in a
+synthetic workload. As the shared-prefix ratio increases, the measured
+`cache_hit_rate` rises proportionally, validating that the scoring feature
+responds to the workload structure it is designed to capture.
+
+![Shared-prefix ratio sweep](figures/cache_prefix_ratio_sweep.svg)
+
+The workload-shape sweep separates three cases: agent-style shared prompts,
+mixed traffic, and random-like prompts. This helps identify when the
+cache-aware score has useful prefix structure to exploit.
+
+![Cache-prefix opportunity by workload shape](figures/cache_prefix_opportunity_sweep.svg)
+
+| Offline check | Main measurement | Takeaway |
+|---|---:|---|
+| LMSYS trace probe | 14.6% hit rate at `prefix_words=16` | Shared-prefix reuse exists in the trace. |
+| Shared-prefix ratio sweep | `cache_hit_rate` 0.00 → 1.00 | The signal scales with controlled prefix reuse. |
+| Workload-shape sweep | high / medium / zero reuse | The method distinguishes agent-like traffic from random-like traffic. |
+| Synthetic scoring run | `rank_corr`, `sjf_quality` | The cache bonus can be combined with the LTR score without replacing it. |
+
+Details and reproduction commands are in the
+[cache-aware prefix-scoring report](docs/experiments/2026-06-17-cache-prefix-probe.md).
+
 ## Project Documents
 
 - [vLLM-LTR reproduction milestone](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)

@@ -1,0 +1,37 @@
+{
+  "source": "cache-aware-prefix-probe-dark.pdf",
+  "workload": "first 500 LMSYS requests",
+  "method": "offline shared-prefix probe",
+  "rows": [
+    {
+      "prefix_words": 16,
+      "cache_hit_rate": 0.146,
+      "reused_requests": 73,
+      "cache_only_quality": 0.236
+    },
+    {
+      "prefix_words": 32,
+      "cache_hit_rate": 0.134,
+      "reused_requests": 67,
+      "cache_only_quality": 0.223
+    },
+    {
+      "prefix_words": 64,
+      "cache_hit_rate": 0.084,
+      "reused_requests": 42,
+      "cache_only_quality": 0.206
+    },
+    {
+      "prefix_words": 128,
+      "cache_hit_rate": 0.08,
+      "reused_requests": 40,
+      "cache_only_quality": 0.198
+    }
+  ],
+  "best_prefix_words": 16,
+  "best_cache_hit_rate": 0.146,
+  "best_reused_requests": 73,
+  "largest_shared_group": 25,
+  "best_cache_only_quality": 0.236,
+  "interpretation": "Shared-prefix reuse is present in the LMSYS trace. Prefix length 16 finds the strongest cache-only signal in this offline probe."
+}

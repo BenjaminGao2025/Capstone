@@ -1,0 +1,8 @@
+{
+  "date": "20260617-demo",
+  "model_id": "offline-demo",
+  "schedule_type": "opt-xxx",
+  "num_prompts": 8,
+  "pred_scores": [0.35, 0.20, 0.25, 0.68, 0.63, 0.42, 0.82, 0.90],
+  "output_lens": [72, 96, 88, 54, 61, 79, 43, 37]
+}

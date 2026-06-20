@@ -1,0 +1,8 @@
+{"prompt":"You are a helpful assistant for a travel booking agent. Customer asks for a weekend hotel in Vancouver near transit.","output_len":72}
+{"prompt":"You are a helpful assistant for a travel booking agent. Customer asks for a family hotel in Vancouver with breakfast.","output_len":96}
+{"prompt":"You are a helpful assistant for a travel booking agent. Customer asks for a downtown Toronto hotel near the conference center.","output_len":88}
+{"prompt":"You are a helpful assistant for a coding tutor. Student asks how to debug a Python list comprehension.","output_len":54}
+{"prompt":"You are a helpful assistant for a coding tutor. Student asks how to debug a Python import error.","output_len":61}
+{"prompt":"You are a helpful assistant for a coding tutor. Student asks how to explain recursion with a small example.","output_len":79}
+{"prompt":"Summarize the following support ticket about a delayed package and provide next steps.","output_len":43}
+{"prompt":"Write a short friendly reminder email for a project meeting tomorrow morning.","output_len":37}
