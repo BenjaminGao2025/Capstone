@@ -164,6 +164,48 @@ Expected behavior:
 - the output JSON should include `cache_only`, `base_ltr`, `combined`, and
   `best_combined_result` fields.
 
+## Controlled Offline Opportunity Sweep
+
+To make the offline evidence clearer, I added a controlled synthetic sweep with
+three workload shapes:
+
+- `agent_shared_prefix`: many requests share long setup prompts.
+- `mixed_prefix`: some requests share setup prompts and some are independent.
+- `random_like`: requests are intentionally different from the first token.
+
+This still does not run a large model or vLLM server. It only measures whether
+the cache-aware method has prefix reuse to exploit.
+
+Files:
+
+```text
+scripts/cache_prefix_opportunity_sweep.py
+results/cache-prefix-opportunity-sweep.json
+figures/cache_prefix_opportunity_sweep.svg
+```
+
+Command:
+
+```bash
+python3 scripts/cache_prefix_opportunity_sweep.py \
+  --json-out results/cache-prefix-opportunity-sweep.json \
+  --svg-out figures/cache_prefix_opportunity_sweep.svg
+```
+
+![Cache-prefix opportunity by workload shape](../../figures/cache_prefix_opportunity_sweep.svg)
+
+What this shows:
+
+- In the agent-style shared-prefix workload, `cache_hit_rate` stays high for
+  most prefix lengths, so cache-aware scheduling has a real opportunity.
+- In the mixed workload, `cache_hit_rate` is around 0.50 for most tested prefix
+  lengths, which means the method may help only part of the traffic.
+- In the random-like workload, `cache_hit_rate` is 0.00, so the method should
+  not claim an advantage.
+
+This is a useful offline result because it defines the condition under which my
+method is expected to matter: repeated prompt prefixes must actually exist.
+
 ## Synthetic Offline Result
 
 Because I cannot run the large model yet, I added one small synthetic offline

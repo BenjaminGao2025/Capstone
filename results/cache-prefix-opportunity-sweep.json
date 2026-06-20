@@ -1,0 +1,162 @@
+{
+  "prefix_words": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12
+  ],
+  "workloads": {
+    "agent_shared_prefix": [
+      {
+        "prefix_words": 2,
+        "unique_prefixes": 4,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 32,
+        "cache_hit_rate": 1.0,
+        "max_group_size": 8
+      },
+      {
+        "prefix_words": 4,
+        "unique_prefixes": 4,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 32,
+        "cache_hit_rate": 1.0,
+        "max_group_size": 8
+      },
+      {
+        "prefix_words": 6,
+        "unique_prefixes": 4,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 32,
+        "cache_hit_rate": 1.0,
+        "max_group_size": 8
+      },
+      {
+        "prefix_words": 8,
+        "unique_prefixes": 4,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 32,
+        "cache_hit_rate": 1.0,
+        "max_group_size": 8
+      },
+      {
+        "prefix_words": 10,
+        "unique_prefixes": 4,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 32,
+        "cache_hit_rate": 1.0,
+        "max_group_size": 8
+      },
+      {
+        "prefix_words": 12,
+        "unique_prefixes": 25,
+        "reused_prefix_groups": 1,
+        "requests_with_reused_prefix": 8,
+        "cache_hit_rate": 0.25,
+        "max_group_size": 8
+      }
+    ],
+    "mixed_prefix": [
+      {
+        "prefix_words": 2,
+        "unique_prefixes": 20,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 16,
+        "cache_hit_rate": 0.5,
+        "max_group_size": 4
+      },
+      {
+        "prefix_words": 4,
+        "unique_prefixes": 20,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 16,
+        "cache_hit_rate": 0.5,
+        "max_group_size": 4
+      },
+      {
+        "prefix_words": 6,
+        "unique_prefixes": 20,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 16,
+        "cache_hit_rate": 0.5,
+        "max_group_size": 4
+      },
+      {
+        "prefix_words": 8,
+        "unique_prefixes": 20,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 16,
+        "cache_hit_rate": 0.5,
+        "max_group_size": 4
+      },
+      {
+        "prefix_words": 10,
+        "unique_prefixes": 20,
+        "reused_prefix_groups": 4,
+        "requests_with_reused_prefix": 16,
+        "cache_hit_rate": 0.5,
+        "max_group_size": 4
+      },
+      {
+        "prefix_words": 12,
+        "unique_prefixes": 29,
+        "reused_prefix_groups": 1,
+        "requests_with_reused_prefix": 4,
+        "cache_hit_rate": 0.125,
+        "max_group_size": 4
+      }
+    ],
+    "random_like": [
+      {
+        "prefix_words": 2,
+        "unique_prefixes": 32,
+        "reused_prefix_groups": 0,
+        "requests_with_reused_prefix": 0,
+        "cache_hit_rate": 0.0,
+        "max_group_size": 1
+      },
+      {
+        "prefix_words": 4,
+        "unique_prefixes": 32,
+        "reused_prefix_groups": 0,
+        "requests_with_reused_prefix": 0,
+        "cache_hit_rate": 0.0,
+        "max_group_size": 1
+      },
+      {
+        "prefix_words": 6,
+        "unique_prefixes": 32,
+        "reused_prefix_groups": 0,
+        "requests_with_reused_prefix": 0,
+        "cache_hit_rate": 0.0,
+        "max_group_size": 1
+      },
+      {
+        "prefix_words": 8,
+        "unique_prefixes": 32,
+        "reused_prefix_groups": 0,
+        "requests_with_reused_prefix": 0,
+        "cache_hit_rate": 0.0,
+        "max_group_size": 1
+      },
+      {
+        "prefix_words": 10,
+        "unique_prefixes": 32,
+        "reused_prefix_groups": 0,
+        "requests_with_reused_prefix": 0,
+        "cache_hit_rate": 0.0,
+        "max_group_size": 1
+      },
+      {
+        "prefix_words": 12,
+        "unique_prefixes": 32,
+        "reused_prefix_groups": 0,
+        "requests_with_reused_prefix": 0,
+        "cache_hit_rate": 0.0,
+        "max_group_size": 1
+      }
+    ]
+  }
+}

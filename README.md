@@ -166,13 +166,13 @@ the earlier
 
 ## Offline Method Check
 
-Yuhjen's cache-aware prefix-scoring branch currently includes a synthetic
-offline sanity check. This is not a large-model or vLLM serving result; it does
-not report throughput, TTFT, p99 latency, or GPU memory. It only verifies that
-the shared-prefix scoring calculation can detect repeated-prefix structure and
-produce scheduler-ranking diagnostics on a laptop.
+Yuhjen's cache-aware prefix-scoring branch currently includes a controlled
+synthetic offline sweep. This is not a large-model or vLLM serving result; it
+does not report throughput, TTFT, p99 latency, or GPU memory. It only verifies
+when shared-prefix structure exists and when the cache-aware scheduler would
+have something to exploit.
 
-![Synthetic offline cache-prefix sanity check](figures/cache_prefix_probe_synthetic.svg)
+![Cache-prefix opportunity by workload shape](figures/cache_prefix_opportunity_sweep.svg)
 
 Details and reproduction commands are in the
 [cache-aware scheduling method draft](docs/experiments/2026-06-17-cache-prefix-probe.md).
