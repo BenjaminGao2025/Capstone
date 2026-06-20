@@ -170,31 +170,11 @@ This branch adds a trace-level analysis for cache-aware prefix scoring. The
 method measures how often requests reuse the same prompt prefix and converts
 that signal into a cache-aware scheduling score.
 
-The LMSYS trace probe below analyzes the first 500 requests and finds measurable
-shared-prefix structure. The strongest setting is `prefix_words = 16`, with a
-14.6% cache hit rate, 73 reused-prefix requests, a largest shared group of 25,
-and 11 reused-prefix groups.
-
-![LMSYS trace cache-prefix summary](figures/cache_prefix_lmsys_trace_summary.svg)
-
-The controlled ratio sweep varies the amount of shared setup context in a
-synthetic workload. As the shared-prefix ratio increases, the measured
-`cache_hit_rate` rises proportionally, validating that the scoring feature
-responds to the workload structure it is designed to capture.
-
-![Shared-prefix ratio sweep](figures/cache_prefix_ratio_sweep.svg)
-
-The workload-shape sweep separates three cases: agent-style shared prompts,
-mixed traffic, and random-like prompts. This helps identify when the
-cache-aware score has useful prefix structure to exploit.
-
-![Cache-prefix opportunity by workload shape](figures/cache_prefix_opportunity_sweep.svg)
-
-The ranking ablation compares the measured prefix opportunity with the existing
-in-distribution and shifted-trace ranking diagnostics. It shows the honest
-result: shared-prefix reuse exists, but adding the cache bonus is neutral at
-best in the committed offline ranking check and does not fix the OOD ranking
-drop by itself.
+The main evaluation figure consolidates the cache-prefix result into one
+readable ablation: measured prefix opportunity, in-distribution versus shifted
+ranking quality, and the effect of adding the cache bonus to LTR. Supporting
+LMSYS, ratio-sweep, and workload-shape plots are kept in the detailed report
+rather than repeated on the repository front page.
 
 ![Cache-prefix ranking ablation](figures/cache_prefix_ranking_ablation.svg)
 
