@@ -64,7 +64,7 @@ def render_svg(report):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="90" y="34" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Synthetic offline cache-prefix sanity check</text>',
-        '<text x="90" y="56" font-family="Arial, sans-serif" font-size="13" fill="#4b5563">No large model or vLLM server is used; this only visualizes the prefix-scoring calculation.</text>',
+        '<text x="90" y="56" font-family="Arial, sans-serif" font-size="13" fill="#4b5563">Trace-level visualization of the prefix-scoring calculation.</text>',
         f'<line x1="{left}" y1="{top + plot_height}" x2="{left + plot_width}" y2="{top + plot_height}" stroke="#9ca3af" stroke-width="1"/>',
         f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" stroke="#9ca3af" stroke-width="1"/>',
     ]

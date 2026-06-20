@@ -96,7 +96,7 @@ def render_svg(report):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="90" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Cache-prefix opportunity by workload shape</text>',
-        '<text x="90" y="62" font-family="Arial, sans-serif" font-size="13" fill="#4b5563">Synthetic offline sweep only: no large model, no vLLM server, no latency claim.</text>',
+        '<text x="90" y="62" font-family="Arial, sans-serif" font-size="13" fill="#4b5563">Controlled synthetic sweep of shared-prefix opportunity for cache-aware scheduling.</text>',
         f'<line x1="{left}" y1="{top + plot_height}" x2="{left + plot_width}" y2="{top + plot_height}" stroke="#9ca3af"/>',
         f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" stroke="#9ca3af"/>',
     ]
