@@ -1,45 +1,67 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Cache-prefix ranking ablation">
-<rect width="1280" height="720" fill="#f7f9fc"/>
-<text x="80" y="76" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800" fill="#162033" text-anchor="start">Cache-Prefix Ranking Ablation</text>
-<text x="80" y="112" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="400" fill="#516173" text-anchor="start">Committed evidence: reusable LMSYS prefixes exist, but cache bonus is neutral or harmful for ranking quality.</text>
-<rect x="80" y="150" width="350" height="360" rx="14" fill="#ffffff" stroke="#ccd7e8"/>
-<text x="108" y="195" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#162033" text-anchor="start">1  Trace opportunity</text>
-<text x="108" y="226" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="#516173" text-anchor="start">RunPod LMSYS prefix probe</text>
-<rect x="465" y="150" width="350" height="360" rx="14" fill="#ffffff" stroke="#ccd7e8"/>
-<text x="493" y="195" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#162033" text-anchor="start">2  OOD ranking quality</text>
-<text x="493" y="226" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="#516173" text-anchor="start">Kendall tau, lmsys-score</text>
-<rect x="850" y="150" width="350" height="360" rx="14" fill="#ffffff" stroke="#ccd7e8"/>
-<text x="878" y="195" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#162033" text-anchor="start">3  Cache-bonus effect</text>
-<text x="878" y="226" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="#516173" text-anchor="start">Synthetic score ablation</text>
-<line x1="125" y1="430" x2="385" y2="430" stroke="#dbe3ef" stroke-width="2"/>
-<rect x="170" y="277" width="92" height="153" rx="6" fill="#18a999"/>
-<text x="216" y="259" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800" fill="#18a999" text-anchor="middle">14.6%</text>
-<text x="216" y="462" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" fill="#516173" text-anchor="middle">hit rate</text>
-<text x="118" y="485" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#162033" text-anchor="start">73 reused requests / 500</text>
-<text x="118" y="512" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="#516173" text-anchor="start">11 groups; largest group 25</text>
-<line x1="525" y1="432" x2="745" y2="432" stroke="#dbe3ef" stroke-width="2"/>
-<rect x="551" y="270" width="64" height="162" rx="6" fill="#2f63e6"/>
-<text x="583" y="256" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="800" fill="#2f63e6" text-anchor="middle">0.640</text>
-<text x="583" y="462" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#516173" text-anchor="middle">LMSYS</text>
-<rect x="651" y="326" width="64" height="106" rx="6" fill="#f59e0b"/>
-<text x="683" y="312" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="800" fill="#f59e0b" text-anchor="middle">0.420</text>
-<text x="683" y="462" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#516173" text-anchor="middle">ShareGPT</text>
-<text x="502" y="485" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#162033" text-anchor="start">Drop: 0.220 absolute tau</text>
-<text x="502" y="512" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="#516173" text-anchor="start">Shifted trace remains harder for LTR.</text>
-<line x1="892" y1="432" x2="1152" y2="432" stroke="#dbe3ef" stroke-width="2"/>
-<rect x="912" y="253" width="55" height="179" rx="6" fill="#2f63e6"/>
-<text x="940" y="239" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#2f63e6" text-anchor="middle">0.994</text>
-<text x="940" y="462" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#516173" text-anchor="middle">base</text>
-<rect x="994" y="253" width="55" height="179" rx="6" fill="#18a999"/>
-<text x="1022" y="239" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#18a999" text-anchor="middle">0.994</text>
-<text x="1022" y="462" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#516173" text-anchor="middle">best</text>
-<rect x="1076" y="350" width="55" height="82" rx="6" fill="#d94f4f"/>
-<text x="1104" y="336" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#d94f4f" text-anchor="middle">0.456</text>
-<text x="1104" y="462" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#516173" text-anchor="middle">w=1.0</text>
-<text x="888" y="485" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#162033" text-anchor="start">Best delta vs base: +0.000</text>
-<text x="888" y="512" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="#516173" text-anchor="start">Large cache weight can hurt ranking.</text>
-<rect x="80" y="560" width="1120" height="92" rx="14" fill="#edf4ff" stroke="#b9d0ff"/>
-<text x="110" y="596" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" fill="#193a8a" text-anchor="start">Conclusion</text>
-<text x="110" y="626" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="500" fill="#162033" text-anchor="start">Cache-prefix reuse is a real workload signal, but final_score = z_ltr + cache_weight * z_cache_bonus does not fix OOD ranking.</text>
-<text x="110" y="650" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="500" fill="#516173" text-anchor="start">Use it as a prefill / TTFT opportunity signal until serving-level validation shows an end-to-end latency win.</text>
+<rect width="1280" height="720" fill="#f8fafc"/>
+<text x="72" y="70" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800" fill="#111827" text-anchor="start">Cache-Prefix Ranking Ablation</text>
+<text x="72" y="104" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#526174" text-anchor="start">One-figure summary for issue #19: prefix opportunity exists, but the cache bonus does not repair OOD ranking.</text>
+<rect x="72" y="136" width="760" height="410" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="104" y="178" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="800" fill="#111827" text-anchor="start">Normalized evidence scale</text>
+<text x="104" y="204" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#526174" text-anchor="start">Horizontal bars keep all labels visible in README and mobile previews.</text>
+<line x1="332" y1="236" x2="332" y2="500" stroke="#d8e1ee" stroke-width="1"/>
+<text x="332" y="522" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="middle">0.00</text>
+<line x1="437" y1="236" x2="437" y2="500" stroke="#d8e1ee" stroke-width="1"/>
+<text x="437" y="522" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="middle">0.25</text>
+<line x1="542" y1="236" x2="542" y2="500" stroke="#d8e1ee" stroke-width="1"/>
+<text x="542" y="522" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="middle">0.50</text>
+<line x1="647" y1="236" x2="647" y2="500" stroke="#d8e1ee" stroke-width="1"/>
+<text x="647" y="522" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="middle">0.75</text>
+<line x1="752" y1="236" x2="752" y2="500" stroke="#d8e1ee" stroke-width="1"/>
+<text x="752" y="522" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="middle">1.00</text>
+<text x="542.0" y="540" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#526174" text-anchor="middle">value</text>
+<text x="104" y="271" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Prefix hit rate</text>
+<text x="254" y="271" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="start">LMSYS trace</text>
+<rect x="332" y="254" width="420" height="18" rx="9" fill="#edf2f7"/>
+<rect x="332" y="254" width="61" height="18" rx="9" fill="#0f9f8f"/>
+<text x="405" y="269" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#0f9f8f" text-anchor="start">14.6%</text>
+<text x="104" y="310" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">LTR tau</text>
+<text x="254" y="310" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="start">LMSYS</text>
+<rect x="332" y="293" width="420" height="18" rx="9" fill="#edf2f7"/>
+<rect x="332" y="293" width="268" height="18" rx="9" fill="#2563eb"/>
+<text x="612" y="308" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#2563eb" text-anchor="start">0.640</text>
+<text x="104" y="349" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">LTR tau</text>
+<text x="254" y="349" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="start">ShareGPT</text>
+<rect x="332" y="332" width="420" height="18" rx="9" fill="#edf2f7"/>
+<rect x="332" y="332" width="176" height="18" rx="9" fill="#f59e0b"/>
+<text x="520" y="347" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#f59e0b" text-anchor="start">0.420</text>
+<text x="104" y="388" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Base LTR</text>
+<text x="254" y="388" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="start">synthetic</text>
+<rect x="332" y="371" width="420" height="18" rx="9" fill="#edf2f7"/>
+<rect x="332" y="371" width="417" height="18" rx="9" fill="#2563eb"/>
+<text x="761" y="386" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#2563eb" text-anchor="start">0.994</text>
+<text x="104" y="427" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Best cache+LTR</text>
+<text x="254" y="427" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="start">no gain</text>
+<rect x="332" y="410" width="420" height="18" rx="9" fill="#edf2f7"/>
+<rect x="332" y="410" width="417" height="18" rx="9" fill="#0f9f8f"/>
+<text x="761" y="425" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#0f9f8f" text-anchor="start">0.994</text>
+<text x="104" y="466" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Cache weight 1.0</text>
+<text x="254" y="466" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#526174" text-anchor="start">can hurt</text>
+<rect x="332" y="449" width="420" height="18" rx="9" fill="#edf2f7"/>
+<rect x="332" y="449" width="191" height="18" rx="9" fill="#dc4a4a"/>
+<text x="535" y="464" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#dc4a4a" text-anchor="start">0.456</text>
+<rect x="872" y="136" width="336" height="410" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="904" y="178" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#111827" text-anchor="start">Key Findings</text>
+<text x="904" y="228" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800" fill="#0f9f8f" text-anchor="start">14.6%</text>
+<text x="1012" y="224" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#111827" text-anchor="start">prefix reuse</text>
+<text x="1012" y="246" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#526174" text-anchor="start">73/500 requests reuse a prefix</text>
+<text x="1012" y="264" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#526174" text-anchor="start">largest shared group: 25</text>
+<text x="904" y="326" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800" fill="#f59e0b" text-anchor="start">0.220</text>
+<text x="1012" y="322" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#111827" text-anchor="start">tau drop</text>
+<text x="1012" y="344" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#526174" text-anchor="start">LTR ranking weakens under</text>
+<text x="1012" y="362" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#526174" text-anchor="start">the shifted ShareGPT trace</text>
+<text x="904" y="424" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800" fill="#dc4a4a" text-anchor="start">+0.000</text>
+<text x="1012" y="420" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#111827" text-anchor="start">best cache delta</text>
+<text x="1012" y="442" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#526174" text-anchor="start">best tested cache bonus is</text>
+<text x="1012" y="460" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#526174" text-anchor="start">neutral, not a ranking fix</text>
+<rect x="72" y="582" width="1136" height="74" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="104" y="616" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#1d4ed8" text-anchor="start">Conclusion</text>
+<text x="230" y="606" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="500" fill="#111827" text-anchor="start">The cache-aware feature finds real shared-prefix opportunity, but adding the cache bonus is neutral at best for ranking.</text>
+<text x="230" y="630" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="500" fill="#111827" text-anchor="start">The method should be presented as a serving-level TTFT opportunity signal, not as a standalone OOD fix.</text>
 </svg>

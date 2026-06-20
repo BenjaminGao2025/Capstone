@@ -34,6 +34,22 @@ def text(x: int, y: int, value: str, size: int = 18, weight: int = 400, fill: st
     )
 
 
+def multiline_text(
+    x: int,
+    y: int,
+    lines: list[str],
+    size: int = 18,
+    weight: int = 400,
+    fill: str = "#152238",
+    line_height: int = 24,
+    anchor: str = "start",
+) -> list[str]:
+    return [
+        text(x, y + i * line_height, line, size=size, weight=weight, fill=fill, anchor=anchor)
+        for i, line in enumerate(lines)
+    ]
+
+
 def make_summary(lmsys: dict, tau: dict, synthetic: dict) -> dict:
     best_lmsys = next(row for row in lmsys["rows"] if row["prefix_words"] == lmsys["best_prefix_words"])
     tau_lmsys = abs(tau["lmsys-score"]["lmsys"]["tau"])
@@ -83,14 +99,14 @@ def make_summary(lmsys: dict, tau: dict, synthetic: dict) -> dict:
 
 def make_svg(summary: dict) -> str:
     width, height = 1280, 720
-    bg = "#f7f9fc"
-    ink = "#162033"
-    muted = "#516173"
-    blue = "#2f63e6"
-    teal = "#18a999"
+    bg = "#f8fafc"
+    ink = "#111827"
+    muted = "#526174"
+    blue = "#2563eb"
+    teal = "#0f9f8f"
     orange = "#f59e0b"
-    red = "#d94f4f"
-    grid = "#dbe3ef"
+    red = "#dc4a4a"
+    grid = "#d8e1ee"
     card = "#ffffff"
 
     lmsys = summary["lmsys_prefix_probe"]
@@ -107,62 +123,71 @@ def make_svg(summary: dict) -> str:
     out: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="Cache-prefix ranking ablation">',
         f'<rect width="{width}" height="{height}" fill="{bg}"/>',
-        text(80, 76, "Cache-Prefix Ranking Ablation", 34, 800, ink),
-        text(80, 112, "Committed evidence: reusable LMSYS prefixes exist, but cache bonus is neutral or harmful for ranking quality.", 18, 400, muted),
+        text(72, 70, "Cache-Prefix Ranking Ablation", 34, 800, ink),
+        text(72, 104, "One-figure summary for issue #19: prefix opportunity exists, but the cache bonus does not repair OOD ranking.", 17, 400, muted),
     ]
 
-    # Three report cards.
-    cards = [
-        (80, 150, 350, 360, "1  Trace opportunity", "RunPod LMSYS prefix probe"),
-        (465, 150, 350, 360, "2  OOD ranking quality", "Kendall tau, lmsys-score"),
-        (850, 150, 350, 360, "3  Cache-bonus effect", "Synthetic score ablation"),
+    # Main chart.
+    out.append('<rect x="72" y="136" width="760" height="410" rx="10" fill="#ffffff" stroke="#cbd5e1"/>')
+    out.append(text(104, 178, "Normalized evidence scale", 21, 800, ink))
+    out.append(text(104, 204, "Horizontal bars keep all labels visible in README and mobile previews.", 14, 500, muted))
+
+    axis_x, axis_y, axis_w = 332, 254, 420
+    rows = [
+        ("Prefix hit rate", hit_rate, teal, "LMSYS trace"),
+        ("LTR tau", tau_lmsys, blue, "LMSYS"),
+        ("LTR tau", tau_shifted, orange, "ShareGPT"),
+        ("Base LTR", base, blue, "synthetic"),
+        ("Best cache+LTR", best, teal, "no gain"),
+        ("Cache weight 1.0", high_weight, red, "can hurt"),
     ]
-    for x, y, w, h, title, subtitle in cards:
-        out.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{card}" stroke="#ccd7e8"/>')
-        out.append(text(x + 28, y + 45, title, 22, 800, ink))
-        out.append(text(x + 28, y + 76, subtitle, 15, 500, muted))
 
-    # Card 1: real trace prefix opportunity.
-    bar_x, base_y, max_h = 170, 430, 210
-    bar_h = int(max_h * hit_rate / 0.2)
-    out.append(f'<line x1="125" y1="{base_y}" x2="385" y2="{base_y}" stroke="{grid}" stroke-width="2"/>')
-    out.append(rect_bar(bar_x, base_y - bar_h, 92, bar_h, teal))
-    out.append(text(bar_x + 46, base_y - bar_h - 18, fmt_pct(hit_rate), 24, 800, teal, "middle"))
-    out.append(text(bar_x + 46, base_y + 32, "hit rate", 16, 600, muted, "middle"))
-    out.append(text(118, 485, f'{lmsys["reused_requests"]} reused requests / 500', 17, 700, ink))
-    out.append(text(118, 512, f'{lmsys["reused_prefix_groups"]} groups; largest group {lmsys["largest_shared_group"]}', 15, 500, muted))
+    for tick in [0.0, 0.25, 0.5, 0.75, 1.0]:
+        x = axis_x + int(axis_w * tick)
+        out.append(f'<line x1="{x}" y1="236" x2="{x}" y2="500" stroke="{grid}" stroke-width="1"/>')
+        out.append(text(x, 522, f"{tick:.2f}", 12, 500, muted, "middle"))
+    out.append(text(axis_x + axis_w / 2, 540, "value", 13, 600, muted, "middle"))
 
-    # Card 2: in-distribution vs shifted tau.
-    chart_x, chart_y, chart_w, chart_h = 525, 242, 220, 190
-    out.append(f'<line x1="{chart_x}" y1="{chart_y + chart_h}" x2="{chart_x + chart_w}" y2="{chart_y + chart_h}" stroke="{grid}" stroke-width="2"/>')
-    for i, (label, value, color) in enumerate([("LMSYS", tau_lmsys, blue), ("ShareGPT", tau_shifted, orange)]):
-        h = int(chart_h * value / 0.75)
-        x = chart_x + 26 + i * 100
-        out.append(rect_bar(x, chart_y + chart_h - h, 64, h, color))
-        out.append(text(x + 32, chart_y + chart_h - h - 14, f"{value:.3f}", 19, 800, color, "middle"))
-        out.append(text(x + 32, chart_y + chart_h + 30, label, 15, 600, muted, "middle"))
-    out.append(text(502, 485, f'Drop: {rank["drop"]:.3f} absolute tau', 17, 700, ink))
-    out.append(text(502, 512, "Shifted trace remains harder for LTR.", 15, 500, muted))
+    for i, (label, value, color, note) in enumerate(rows):
+        y = axis_y + i * 39
+        bar_w = max(4, int(axis_w * value))
+        out.append(text(104, y + 17, label, 15, 700, ink))
+        out.append(text(254, y + 17, note, 12, 500, muted))
+        out.append(f'<rect x="{axis_x}" y="{y}" width="{axis_w}" height="18" rx="9" fill="#edf2f7"/>')
+        out.append(f'<rect x="{axis_x}" y="{y}" width="{bar_w}" height="18" rx="9" fill="{color}"/>')
+        value_label = fmt_pct(value) if i == 0 else f"{value:.3f}"
+        out.append(text(axis_x + bar_w + 12, y + 15, value_label, 14, 800, color))
 
-    # Card 3: cache-bonus effect.
-    effect_x, effect_y, effect_w, effect_h = 892, 242, 260, 190
-    out.append(f'<line x1="{effect_x}" y1="{effect_y + effect_h}" x2="{effect_x + effect_w}" y2="{effect_y + effect_h}" stroke="{grid}" stroke-width="2"/>')
-    bars = [("base", base, blue), ("best", best, teal), ("w=1.0", high_weight, red)]
-    for i, (label, value, color) in enumerate(bars):
-        h = int(effect_h * value / 1.05)
-        x = effect_x + 20 + i * 82
-        out.append(rect_bar(x, effect_y + effect_h - h, 55, h, color))
-        out.append(text(x + 28, effect_y + effect_h - h - 14, f"{value:.3f}", 18, 800, color, "middle"))
-        out.append(text(x + 28, effect_y + effect_h + 30, label, 15, 600, muted, "middle"))
-    delta = best - base
-    out.append(text(888, 485, f'Best delta vs base: {delta:+.3f}', 17, 700, ink))
-    out.append(text(888, 512, "Large cache weight can hurt ranking.", 15, 500, muted))
+    # Right-side findings panel.
+    out.append('<rect x="872" y="136" width="336" height="410" rx="10" fill="#ffffff" stroke="#cbd5e1"/>')
+    out.append(text(904, 178, "Key Findings", 22, 800, ink))
 
-    # Conclusion strip.
-    out.append('<rect x="80" y="560" width="1120" height="92" rx="14" fill="#edf4ff" stroke="#b9d0ff"/>')
-    out.append(text(110, 596, "Conclusion", 20, 800, "#193a8a"))
-    out.append(text(110, 626, "Cache-prefix reuse is a real workload signal, but final_score = z_ltr + cache_weight * z_cache_bonus does not fix OOD ranking.", 18, 500, ink))
-    out.append(text(110, 650, "Use it as a prefill / TTFT opportunity signal until serving-level validation shows an end-to-end latency win.", 16, 500, muted))
+    findings = [
+        (fmt_pct(hit_rate), "prefix reuse", [f'{lmsys["reused_requests"]}/500 requests reuse a prefix', f'largest shared group: {lmsys["largest_shared_group"]}']),
+        (f'{rank["drop"]:.3f}', "tau drop", ["LTR ranking weakens under", "the shifted ShareGPT trace"]),
+        (f'{best - base:+.3f}', "best cache delta", ["best tested cache bonus is", "neutral, not a ranking fix"]),
+    ]
+    for i, (big, label, lines) in enumerate(findings):
+        y = 228 + i * 98
+        out.append(text(904, y, big, 32, 800, [teal, orange, red][i]))
+        out.append(text(1012, y - 4, label, 15, 800, ink))
+        out.extend(multiline_text(1012, y + 18, lines, 13, 500, muted, 18))
+
+    # Bottom conclusion strip.
+    out.append('<rect x="72" y="582" width="1136" height="74" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>')
+    out.append(text(104, 616, "Conclusion", 18, 800, "#1d4ed8"))
+    out.extend(multiline_text(
+        230,
+        606,
+        [
+            "The cache-aware feature finds real shared-prefix opportunity, but adding the cache bonus is neutral at best for ranking.",
+            "The method should be presented as a serving-level TTFT opportunity signal, not as a standalone OOD fix.",
+        ],
+        16,
+        500,
+        ink,
+        24,
+    ))
 
     out.append("</svg>")
     return "\n".join(out) + "\n"
