@@ -18,62 +18,69 @@ def line(points):
 
 def render_svg(report):
     rows = report["rows"]
-    width = 1120
-    height = 560
-    left = 82
-    top = 118
-    plot_w = 610
-    plot_h = 290
-    x_values = [row["prefix_words"] for row in rows]
+    width = 960
+    height = 610
+    left = 96
+    top = 112
+    plot_w = 760
+    plot_h = 260
+    bar_w = 112
+    step = plot_w / len(rows)
 
-    def x_for(prefix_words):
-        return scale(prefix_words, min(x_values), max(x_values), left, left + plot_w)
+    def x_for(index):
+        return left + step * index + step / 2
 
     def y_for_hit(value):
         return scale(value, 0.0, 0.16, top + plot_h, top)
 
-    hit_points = [(x_for(row["prefix_words"]), y_for_hit(row["cache_hit_rate"])) for row in rows]
+    hit_points = [(x_for(index), y_for_hit(row["cache_hit_rate"])) for index, row in enumerate(rows)]
+    best = max(rows, key=lambda row: row["cache_hit_rate"])
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        '<text x="72" y="46" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">LMSYS Trace Cache-Prefix Summary</text>',
-        '<text x="72" y="74" font-family="Arial, sans-serif" font-size="14" fill="#475569">Offline prefix reuse analysis over the first 500 LMSYS requests.</text>',
-        '<rect x="54" y="94" width="680" height="365" rx="12" fill="#f8fafc" stroke="#dbe3ef"/>',
+        '<text x="54" y="44" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#111827">LMSYS Trace Prefix-Reuse Probe</text>',
+        '<text x="54" y="72" font-family="Arial, sans-serif" font-size="14" fill="#4b5563">Offline analysis of the first 500 LMSYS requests. Bars show cache-hit rate by tested prefix length.</text>',
+        '<rect x="54" y="92" width="852" height="328" rx="8" fill="#ffffff" stroke="#d8e0ec"/>',
     ]
 
     for tick in [0.00, 0.04, 0.08, 0.12, 0.16]:
         y = y_for_hit(tick)
-        parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{left + plot_w}" y2="{y:.1f}" stroke="#e2e8f0"/>')
-        parts.append(f'<text x="{left - 12}" y="{y + 4:.1f}" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#64748b">{tick * 100:.0f}%</text>')
+        parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{left + plot_w}" y2="{y:.1f}" stroke="#e5e7eb"/>')
+        parts.append(f'<text x="{left - 14}" y="{y + 4:.1f}" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#6b7280">{tick * 100:.0f}%</text>')
 
     parts.append(f'<line x1="{left}" y1="{top + plot_h}" x2="{left + plot_w}" y2="{top + plot_h}" stroke="#94a3b8"/>')
     parts.append(f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_h}" stroke="#94a3b8"/>')
 
-    for row in rows:
-        x = x_for(row["prefix_words"])
-        parts.append(f'<text x="{x:.1f}" y="{top + plot_h + 24}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">{row["prefix_words"]}</text>')
+    for index, row in enumerate(rows):
+        x = x_for(index)
+        y = y_for_hit(row["cache_hit_rate"])
+        bar_h = top + plot_h - y
+        fill = "#2563eb" if row == best else "#93c5fd"
+        parts.append(f'<rect x="{x - bar_w / 2:.1f}" y="{y:.1f}" width="{bar_w}" height="{bar_h:.1f}" rx="5" fill="{fill}"/>')
+        parts.append(f'<text x="{x:.1f}" y="{y - 10:.1f}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">{row["cache_hit_rate"] * 100:.1f}%</text>')
+        parts.append(f'<text x="{x:.1f}" y="{top + plot_h + 24}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#374151">{row["prefix_words"]}</text>')
 
-    parts.append(f'<polyline points="{line(hit_points)}" fill="none" stroke="#2563eb" stroke-width="4"/>')
-
-    for row, (x, y) in zip(rows, hit_points):
-        parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6" fill="#2563eb"/>')
-        parts.append(f'<text x="{x:.1f}" y="{y - 12:.1f}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">{row["cache_hit_rate"] * 100:.1f}%</text>')
+    parts.append(f'<polyline points="{line(hit_points)}" fill="none" stroke="#1d4ed8" stroke-width="2.5"/>')
+    for x, y in hit_points:
+        parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>')
 
     parts.extend([
-        f'<text x="{left + plot_w / 2}" y="{height - 104}" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">prefix_words</text>',
-        '<text x="24" y="282" transform="rotate(-90 24 282)" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">cache_hit_rate</text>',
-        '<rect x="770" y="100" width="300" height="188" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>',
-        '<text x="792" y="134" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#1e3a8a">Best setting</text>',
-        '<text x="792" y="176" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="#2563eb">16 words</text>',
-        '<text x="792" y="210" font-family="Arial, sans-serif" font-size="14" fill="#1e40af">14.6% cache hit rate</text>',
-        '<text x="792" y="236" font-family="Arial, sans-serif" font-size="14" fill="#1e40af">73 reused requests out of 500</text>',
-        '<text x="792" y="262" font-family="Arial, sans-serif" font-size="14" fill="#1e40af">largest shared group: 25</text>',
-        '<rect x="770" y="318" width="300" height="112" rx="12" fill="#f8fafc" stroke="#dbe3ef"/>',
-        '<text x="792" y="350" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a">Interpretation</text>',
-        '<text x="792" y="377" font-family="Arial, sans-serif" font-size="13" fill="#475569">Shorter prefix keys expose more</text>',
-        '<text x="792" y="397" font-family="Arial, sans-serif" font-size="13" fill="#475569">shared-prefix reuse in this trace.</text>',
-        '<text x="792" y="417" font-family="Arial, sans-serif" font-size="13" fill="#475569">That is the opportunity signal.</text>',
+        f'<text x="{left + plot_w / 2}" y="{top + plot_h + 52}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#374151">prefix_words</text>',
+        '<text x="28" y="215" transform="rotate(-90 28 215)" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#374151">cache_hit_rate</text>',
+        '<rect x="54" y="452" width="852" height="104" rx="8" fill="#f8fafc" stroke="#d8e0ec"/>',
+        '<text x="80" y="486" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#111827">Best observed setting</text>',
+        '<text x="80" y="526" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#2563eb">16 words</text>',
+        '<line x1="260" y1="474" x2="260" y2="536" stroke="#d8e0ec"/>',
+        '<text x="295" y="486" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">cache hit rate</text>',
+        '<text x="295" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">14.6%</text>',
+        '<text x="445" y="486" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">reused requests</text>',
+        '<text x="445" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">73 / 500</text>',
+        '<text x="625" y="486" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">largest group</text>',
+        '<text x="625" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">25</text>',
+        '<text x="775" y="486" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">quality</text>',
+        '<text x="775" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">0.236</text>',
+        '<text x="54" y="586" font-family="Arial, sans-serif" font-size="12" fill="#4b5563">Takeaway: reusable prefix structure is measurable in this trace and is strongest at the shortest tested prefix length.</text>',
         '</svg>',
     ])
     return "\n".join(parts)
