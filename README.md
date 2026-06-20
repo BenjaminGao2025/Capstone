@@ -164,14 +164,19 @@ at rate 8 the mis-ranked LTR arm exhausts swap and crashes the engine. See the
 the earlier
 [reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md).
 
-## Offline Method Check
+## Cache-Aware Prefix Analysis
 
-Yuhjen's cache-aware prefix-scoring branch currently includes a controlled
-synthetic offline sweep. The analysis focuses on shared-prefix opportunity:
-when repeated prompt prefixes exist, how often they appear, and where a
-cache-aware scheduler would have reusable context to exploit.
+Yuhjen's cache-aware prefix-scoring branch adds a trace-level analysis for
+shared-prefix opportunity. The method measures how often requests reuse the
+same prompt prefix and converts that signal into a cache-aware scheduling
+score.
 
-![Cache-prefix opportunity by workload shape](figures/cache_prefix_opportunity_sweep.svg)
+The controlled ratio sweep below varies the amount of shared setup context in a
+synthetic workload. As the shared-prefix ratio increases, the measured
+`cache_hit_rate` rises proportionally, which validates that the scoring feature
+responds to the workload structure it is designed to capture.
+
+![Shared-prefix ratio sweep](figures/cache_prefix_ratio_sweep.svg)
 
 Details and reproduction commands are in the
 [cache-aware prefix-scoring report](docs/experiments/2026-06-17-cache-prefix-probe.md).

@@ -4,11 +4,11 @@ Date: 2026-06-17
 
 ## Status
 
-This branch develops my cache-aware prefix-scoring method. The method reads a
+This branch develops a cache-aware prefix-scoring method. The method reads a
 request trace, detects whether multiple prompts share the same prefix, and
 turns that prefix reuse into an extra scheduling score.
 
-The method keeps the base LTR idea, but adds my own cache signal:
+The method keeps the base LTR idea, but adds a cache-reuse signal:
 
 ```text
 final_score = normalized_ltr_score + cache_weight * normalized_cache_bonus
@@ -19,9 +19,9 @@ path that can be used by the scheduler integration.
 
 ## Goal
 
-The goal is to connect my related-work direction on shared prefixes and KV
-cache reuse to the team's scheduler experiment. The base LTR scheduler ranks
-requests using predicted output length. My method asks a different question:
+The goal is to connect the shared-prefix related-work direction to the team's
+scheduler experiment. The base LTR scheduler ranks requests using predicted
+output length. This method asks a different question:
 
 > If two or more requests share the same beginning context, should the scheduler
 > give them a small priority bonus because they may create cache-reuse value?
@@ -30,7 +30,7 @@ Base paper signal:
 
 - predicted output length / LTR score
 
-My added signal:
+Added signal:
 
 - shared-prefix or cache-reuse opportunity
 
@@ -41,13 +41,13 @@ final_score = LTR_score + cache_bonus
 ```
 
 If a request is predicted to be short, the LTR score already helps it run
-earlier. If the same request also shares a prefix with other requests, my
+earlier. If the same request also shares a prefix with other requests, the
 method adds a small cache bonus.
 
-## Why This Is My Direction
+## Motivation
 
-This method comes from the related-work thread I worked on: shared prefixes are
-important in LLM serving, especially for chatbots, RAG, agents, tool-use
+This method comes from the shared-prefix related-work thread. Shared prefixes
+are important in LLM serving, especially for chatbots, RAG, agents, tool-use
 prompts, and repeated system prompts.
 
 - Hydragen shows that shared prefixes can affect inference efficiency.
@@ -56,9 +56,9 @@ prompts, and repeated system prompts.
 - vLLM-LTR focuses on scheduling by predicted output length, but does not
   directly use shared-prefix reuse as a scheduling feature.
 
-My method turns that shared-prefix observation into a scheduler-level feature.
-It is smaller than implementing a full cache system, but it is something I can
-code, test, and connect to the scheduler validation path.
+The method turns that shared-prefix observation into a scheduler-level feature.
+It is smaller than implementing a full cache system, but it can be coded,
+tested, and connected to the scheduler validation path.
 
 ## What the Script Does
 
@@ -86,13 +86,13 @@ Second script:
 scripts/build_cache_aware_score_file.py
 ```
 
-This script converts my final score into a prompt-to-score JSON file. That file
+This script converts the final score into a prompt-to-score JSON file. That file
 can be passed into the existing scheduler integration through `IPT_SCORE_FILE`,
 so the method has a concrete path from trace analysis to scheduler scoring.
 
 ## Calculation
 
-My calculation has four steps:
+The calculation has four steps:
 
 1. Normalize each prompt by lowercasing it and collapsing repeated spaces.
 2. Extract the first `prefix_words` words as the request's prefix key.
@@ -103,7 +103,7 @@ My calculation has four steps:
 cache_bonus = log1p(shared_prefix_group_size - 1) * prefix_words
 ```
 
-Then I standardize the LTR score and the cache bonus so they are on comparable
+Then the LTR score and cache bonus are standardized so they are on comparable
 scales:
 
 ```text
@@ -116,9 +116,19 @@ The final score is:
 final_score = z_ltr_score + cache_weight * z_cache_bonus
 ```
 
-The output is a scheduler-score diagnostic. It answers: "does my cache-aware
+The output is a scheduler-score diagnostic. It answers: "does the cache-aware
 feature change ranking in a measurable way, and does this workload have enough
 shared-prefix structure to justify using the cache bonus?"
+
+## Metric Definitions
+
+| Metric | Meaning |
+|---|---|
+| `cache_hit_rate` | Fraction of requests whose prefix appears in at least one other request. |
+| `reused_prefix_groups` | Number of repeated-prefix groups in the trace. |
+| `max_group_size` | Size of the largest group sharing the same prefix. |
+| `rank_corr` | Correlation between scheduling score rank and true output-length rank. |
+| `sjf_quality` | Negative `rank_corr`; larger values better match shortest-job-first ordering. |
 
 ## Local Sanity Check
 
@@ -152,8 +162,8 @@ Expected behavior:
 
 ## Controlled Offline Opportunity Sweep
 
-To make the offline evidence clearer, I added a controlled synthetic sweep with
-three workload shapes:
+To make the evidence clearer, the branch adds a controlled synthetic sweep with three
+workload shapes:
 
 - `agent_shared_prefix`: many requests share long setup prompts.
 - `mixed_prefix`: some requests share setup prompts and some are independent.
@@ -188,12 +198,50 @@ What this shows:
 - In the random-like workload, `cache_hit_rate` is 0.00, so the method should
   not claim an advantage.
 
-This result defines the condition under which my method is expected to matter:
+This result defines the condition under which the method is expected to matter:
 repeated prompt prefixes must actually exist.
+
+## Shared-Prefix Ratio Sweep
+
+The branch also adds a ratio sweep that controls how much of the workload contains a
+shared setup prefix. The trace size stays fixed at 40 requests, and the target
+shared-prefix ratio varies from 0% to 100%.
+
+Files:
+
+```text
+scripts/cache_prefix_ratio_sweep.py
+results/cache-prefix-ratio-sweep.json
+figures/cache_prefix_ratio_sweep.svg
+```
+
+Command:
+
+```bash
+python3 scripts/cache_prefix_ratio_sweep.py \
+  --json-out results/cache-prefix-ratio-sweep.json \
+  --svg-out figures/cache_prefix_ratio_sweep.svg
+```
+
+![Shared-prefix ratio sweep](../../figures/cache_prefix_ratio_sweep.svg)
+
+Summary:
+
+| Target shared-prefix ratio | `cache_hit_rate` | `reused_prefix_groups` | `max_group_size` |
+|---:|---:|---:|---:|
+| 0% | 0.00 | 0 | 1 |
+| 25% | 0.25 | 2 | 5 |
+| 50% | 0.50 | 4 | 5 |
+| 75% | 0.75 | 6 | 5 |
+| 100% | 1.00 | 8 | 5 |
+
+This sweep gives a clearer data story than a single demo trace: the method's
+opportunity signal scales with the amount of repeated-prefix structure in the
+workload.
 
 ## Synthetic Scoring Result
 
-I also added one small synthetic scoring experiment. It checks whether my
+The branch also includes one small synthetic scoring experiment. It checks whether the
 prefix-based calculation behaves as expected on a trace with known
 shared-prefix groups.
 
@@ -266,9 +314,9 @@ The output JSON uses fields specific to this cache-prefix method:
 - `requests_with_reused_prefix`: how many requests share a prefix with another
   request.
 - `cache_hit_rate`: fraction of requests whose prefix appears more than once.
-- `cache_only`: ranking diagnostic using only my cache bonus.
+- `cache_only`: ranking diagnostic using only the cache bonus.
 - `base_ltr`: ranking diagnostic using only the original LTR score.
-- `combined`: ranking diagnostic after adding my cache bonus to LTR.
+- `combined`: ranking diagnostic after adding the cache bonus to LTR.
 - `best_combined_result`: best tested `prefix_words` and `cache_weight`
   combination by this offline ranking metric.
 
@@ -306,8 +354,8 @@ diagnostics before expanding the method further.
 
 ## Proposed Next Validation
 
-The next validation should stay aligned with my method instead of copying the
-team's latency table. I would validate it in three stages:
+The next validation should stay aligned with the cache-prefix method instead of
+copying the team's latency table. A suitable validation path has three stages:
 
 1. Run the prefix-opportunity sweep on a real trace without starting vLLM.
 2. If repeated prefixes exist, export a cache-aware score file and compare
@@ -316,6 +364,6 @@ team's latency table. I would validate it in three stages:
    environment is ready.
 
 The key first question is: "does this workload contain enough shared-prefix
-structure for my cache-aware score to matter?" If the offline prefix
+structure for the cache-aware score to matter?" If the offline prefix
 opportunity is near zero, then the method should be reported as not applicable
 to that workload rather than pushed into a larger serving run.

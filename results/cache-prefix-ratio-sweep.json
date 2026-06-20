@@ -1,0 +1,57 @@
+{
+  "total_requests": 40,
+  "prefix_words": 6,
+  "group_size": 5,
+  "rows": [
+    {
+      "total_requests": 40,
+      "prefix_words": 6,
+      "unique_prefixes": 40,
+      "reused_prefix_groups": 0,
+      "requests_with_reused_prefix": 0,
+      "cache_hit_rate": 0.0,
+      "max_group_size": 1,
+      "shared_ratio": 0.0
+    },
+    {
+      "total_requests": 40,
+      "prefix_words": 6,
+      "unique_prefixes": 32,
+      "reused_prefix_groups": 2,
+      "requests_with_reused_prefix": 10,
+      "cache_hit_rate": 0.25,
+      "max_group_size": 5,
+      "shared_ratio": 0.25
+    },
+    {
+      "total_requests": 40,
+      "prefix_words": 6,
+      "unique_prefixes": 24,
+      "reused_prefix_groups": 4,
+      "requests_with_reused_prefix": 20,
+      "cache_hit_rate": 0.5,
+      "max_group_size": 5,
+      "shared_ratio": 0.5
+    },
+    {
+      "total_requests": 40,
+      "prefix_words": 6,
+      "unique_prefixes": 16,
+      "reused_prefix_groups": 6,
+      "requests_with_reused_prefix": 30,
+      "cache_hit_rate": 0.75,
+      "max_group_size": 5,
+      "shared_ratio": 0.75
+    },
+    {
+      "total_requests": 40,
+      "prefix_words": 6,
+      "unique_prefixes": 8,
+      "reused_prefix_groups": 8,
+      "requests_with_reused_prefix": 40,
+      "cache_hit_rate": 1.0,
+      "max_group_size": 5,
+      "shared_ratio": 1.0
+    }
+  ]
+}
