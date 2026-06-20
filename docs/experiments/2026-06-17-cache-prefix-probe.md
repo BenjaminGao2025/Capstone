@@ -1,55 +1,67 @@
-# Cache-Aware Scheduling Probe
+# Yuhjen Cache-Aware Scheduling Probe
 
 Date: 2026-06-17
 
-## Current Status
+## My Method Status
 
-The cache-aware scheduling work is at the offline-probe stage. It does not
-require a GPU and does not run the full vLLM serving engine. The committed
-artifact is a reproducible method for testing whether shared-prefix reuse can
-be added to the existing LTR scheduler signal:
+My contribution is a small cache-aware scheduling method that can be tested
+without running the full large-model serving experiment. Instead of changing
+vLLM first, I start with an offline probe: read a request trace, detect whether
+multiple prompts share the same prefix, and turn that prefix reuse into an
+extra scheduling score.
+
+The method keeps the base LTR idea, but adds my own cache signal:
 
 ```text
 final_score = normalized_ltr_score + cache_weight * normalized_cache_bonus
 ```
 
-This is intentionally a small, honest step before a large-model run. It checks
-whether the cache signal exists in a trace, whether it changes request ranking,
-and whether the resulting score table can be exported for the existing
-`IPT_SCORE_FILE` path.
+This is not a large-model result yet. It is a reproducible method prototype
+that shows how my cache-aware idea can be measured first and then passed into a
+future serving run through a score file.
 
 ## Goal
 
-This is a lightweight experiment inspired by CacheGen and CachedAttention. The
-goal is not to implement those systems directly. Instead, we test whether a
-simple cache-related signal can be added to the base paper's LTR scheduler.
+The goal is to connect my related-work direction on shared prefixes and KV
+cache reuse to the team's scheduler experiment. The base LTR scheduler ranks
+requests using predicted output length. My method asks a different question:
+
+> If two or more requests share the same beginning context, should the scheduler
+> give them a small priority bonus because they may create cache-reuse value?
 
 Base paper signal:
 
 - predicted output length / LTR score
 
-Proposed extra signal:
+My added signal:
 
 - shared-prefix or cache-reuse opportunity
 
-The high-level idea is:
+The high-level idea is still simple:
 
 ```text
 final_score = LTR_score + cache_bonus
 ```
 
-If a request is predicted to be short, it already receives a high LTR priority.
-If it also shares a prefix with other requests, we add a small cache bonus.
+If a request is predicted to be short, the LTR score already helps it run
+earlier. If the same request also shares a prefix with other requests, my
+method adds a small cache bonus.
 
-## Why This Relates to CacheGen and CachedAttention
+## Why This Is My Direction
 
-- CacheGen shows that even reused KV cache can be expensive to load.
-- CachedAttention shows that recomputing old context in multi-turn chat is
-  wasteful.
-- Both papers suggest that latency is not only about request ordering or output
-  length. Cache reuse and repeated context also matter.
+This method comes from the related-work thread I worked on: shared prefixes are
+important in LLM serving, especially for chatbots, RAG, agents, tool-use
+prompts, and repeated system prompts.
 
-This probe turns that related-work idea into a scheduler-level feature.
+- Hydragen shows that shared prefixes can affect inference efficiency.
+- CacheGen and CachedAttention show that cache reuse and repeated context have
+  real latency cost.
+- vLLM-LTR focuses on scheduling by predicted output length, but does not
+  directly use shared-prefix reuse as a scheduling feature.
+
+My method turns that shared-prefix observation into a scheduler-level feature.
+It is smaller than implementing a full cache system, but it is something I can
+code, test, and hand to the teammate who has the large-model environment.
 
 ## What the Script Does
 
@@ -61,12 +73,13 @@ scripts/cache_prefix_probe.py
 
 The script:
 
-1. Loads the same trace prompts used by the vLLM-LTR experiments.
-2. Groups requests by normalized prompt prefix.
-3. Computes a cache bonus for prefixes that appear more than once.
-4. Optionally combines this cache bonus with the original LTR scores from an
+1. Loads prompts from a trace file.
+2. Normalizes each prompt and extracts the first N words as its prefix.
+3. Counts how many requests share each prefix.
+4. Gives a larger cache bonus to requests whose prefix appears more than once.
+5. Optionally combines this cache bonus with the original LTR scores from an
    existing result JSON.
-5. Reports rank-correlation and SJF-quality style diagnostics.
+6. Reports rank-correlation and SJF-quality style diagnostics.
 
 This is an offline probe. It does not change vLLM and does not require GPU.
 
@@ -76,10 +89,10 @@ Second script:
 scripts/build_cache_aware_score_file.py
 ```
 
-This script converts the same scoring idea into a prompt-to-score JSON file.
-That file can be passed into the scheduler integration through the existing
-`IPT_SCORE_FILE` route, so the offline method has a clear path into a later
-serving experiment.
+This script converts my final score into a prompt-to-score JSON file. That file
+can be passed into the existing scheduler integration through `IPT_SCORE_FILE`,
+so the method has a concrete path from offline prototype to later GPU serving
+experiment.
 
 ## Smoke Check
 
@@ -152,26 +165,27 @@ The signal is promising if:
   which means it may still be useful for TTFT/prefill latency in a real serving
   experiment.
 
-## Reproduction Notes
+## What This Contributes
 
-This method follows the same repository pattern as the larger Llama-3-8B
-experiments:
+This contribution is different from the team's large reproduction run. It does
+not claim that cache-aware scheduling is faster yet. What it contributes is:
 
-- method documentation lives under `docs/experiments/`;
-- runnable code lives under `scripts/`;
-- committed smoke artifacts live under `results/`;
-- large-model claims are separated from offline method checks.
+- a concrete cache-aware scoring rule;
+- a script that measures prefix reuse in a trace;
+- a script that exports cache-aware scheduler scores;
+- a no-GPU smoke test that other teammates can rerun;
+- a clear next step for a teammate with the CUDA vLLM-LTR environment.
 
-For the full large-model experiment, a teammate with the CUDA vLLM-LTR
-environment can run the probe against the real LMSYS or ShareGPT trace and then
-use `scripts/build_cache_aware_score_file.py` to create the score table for a
-serving run.
+This lets me contribute code and methodology now, even before I can run the
+large model myself.
 
 ## Limitation
 
 This probe does not prove end-to-end latency improvement yet. It only checks
-whether the cache-aware idea is worth trying in the scheduler. A real serving
-experiment would be the next step.
+whether the cache-aware idea is measurable and easy to plug into the scheduler.
+The cache bonus can also hurt if prefix reuse does not align with shorter
+latency or better batching. A real serving experiment is required before making
+any performance claim.
 
 ## Next Step
 
