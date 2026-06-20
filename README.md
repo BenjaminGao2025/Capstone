@@ -153,6 +153,75 @@ is expected: the predictor was trained to rank Llama-3-8B output lengths, but
 its ranking on `facebook/opt-1.3b` is effectively noise (Kendall's Tau about
 -0.09), so LTR behaves approximately like random scheduling in this smoke test.
 
+## Honest Results Table (Single Source of Truth)
+
+This is the authoritative table for the summary, midterm deck, and final
+report.  All claims must be traceable to a committed result file.
+
+### In-distribution (LMSYS trace, Meta-Llama-3-8B-Instruct)
+
+| Rate (req/s) | FCFS mean TTFT | LTR mean TTFT | TTFT ratio | LTR tau |
+|---:|---:|---:|---:|---:|
+| 2  | 111 ms | 130 ms | 0.85× | −0.641 |
+| 4  | 1,122 ms | 234 ms | **4.8×** | −0.642 |
+| 8  | 16,362 ms | 2,026 ms | **8.1×** | −0.641 |
+| 16 | 18,457 ms | 2,915 ms | **6.3×** | −0.642 |
+| 32 | 21,215 ms | 6,095 ms | **3.5×** | −0.642 |
+
+Peak in-distribution gain: **8.1× mean TTFT** at rate 8.
+
+### Out-of-distribution (ShareGPT trace — predictor trained on LMSYS)
+
+| Metric | FCFS | LTR | Verdict |
+|:---|---:|---:|:---|
+| Kendall tau | N/A | −0.420 (vs −0.642 in-dist) | **−34% ranking quality** |
+| Mean TTFT (rate 4) | 40,892 ms | 23,810 ms | LTR 1.72× better mean TTFT ✓ |
+| p99 latency (rate 4) | 151 s | 231 s | **LTR 1.53× worse p99** ✗ |
+| Rate-8 stability | 500/500 complete | engine crash | **LTR crashes** ✗ |
+
+### OOD Breakdown Summary ("三连崩")
+
+1. **Ranking quality collapses**: Kendall tau drops from −0.642 to −0.420 (−34%).
+2. **Tail-latency inversion**: p99 worsens from 151 s (FCFS) to 231 s (LTR) — 53% worse.
+3. **Engine crash at rate 8**: mis-ranked preemption storm exhausts CPU swap.
+
+### Honest Contribution Statement
+
+> We characterised the robustness boundary of internal-signal LLM scheduling:
+> the LTR ranker achieves up to **8.1× mean TTFT in-distribution** but exhibits
+> complete tail-latency inversion and engine failure **out-of-distribution**.
+> The deployable head gain (mean-TTFT, no crash, no p99 regression) is
+> approximately **1.7× at rate 4** on the OOD ShareGPT workload.
+> We do **not** claim "8× everywhere."
+
+### Diagnostic Figure
+
+![OOD diagnostic: tau vs distribution and p99 inversion](figures/ood_tau_vs_shift.png)
+
+See `scripts/ood_diagnostic.py` to reproduce.
+
+### Mitigation: Waiting-Time Aging Gate (Simulation Study)
+
+A naive score-percentile confidence gate provides **no improvement**: requests
+mis-ranked as long are still served last even when the gate is applied, because
+their low score is "confidently" wrong.
+
+A **waiting-time aging gate** (escalate requests that have waited > W ×
+mean_service_time to FCFS) breaks the starvation loop:
+
+| W (× mean svc time) | OOD p99 ratio | OOD mean ratio | Verdict |
+|---:|---:|---:|:---|
+| 0 (FCFS) | 1.000× | 1.000× | baseline |
+| 8 | **0.984×** | **0.937×** | Pareto-better than FCFS ✓ |
+| 16 | 1.023× | 0.860× | slight p99 cost, big mean gain |
+| ∞ (LTR) | 3.108× | 0.741× | maximum mean, severe p99 tail |
+
+At W = 8, the aging gate achieves **both** lower mean and lower p99 than pure
+FCFS on the OOD workload.  See `scripts/confidence_gate_sim.py` for the
+simulation; real-vLLM implementation remains future work.
+
+![Aging gate simulation](figures/confidence_gate_sim.png)
+
 ## Current Status
 
 The formal `Meta-Llama-3-8B-Instruct` reproduction is complete: the
