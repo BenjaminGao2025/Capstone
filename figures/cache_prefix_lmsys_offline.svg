@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620">
+<rect width="100%" height="100%" fill="#0b1020"/>
+<pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+<path d="M 80 0 L 0 0 0 80" fill="none" stroke="#1f2a44" stroke-width="1"/>
+</pattern>
+<rect width="100%" height="100%" fill="url(#grid)" opacity="0.55"/>
+<text x="70" y="54" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#22d3ee">LMSYS TRACE · OFFLINE PREFIX PROBE</text>
+<text x="70" y="105" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#f8fafc">Shared-prefix signal in 500 LMSYS requests</text>
+<text x="70" y="137" font-family="Arial, sans-serif" font-size="16" fill="#cbd5e1">Prefix length 16 gives the strongest cache-only signal in this probe.</text>
+<rect x="60" y="170" width="980" height="270" rx="14" fill="#111827" stroke="#263449"/>
+<text x="110" y="225" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#f8fafc">Cache hit rate</text>
+<rect x="110.0" y="225.0" width="52" height="150.0" rx="8" fill="#ec4899"/>
+<text x="136.0" y="215.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">14.6%</text>
+<text x="136.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">16</text>
+<rect x="180.0" y="237.3" width="52" height="137.7" rx="8" fill="#ec4899"/>
+<text x="206.0" y="227.3" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">13.4%</text>
+<text x="206.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">32</text>
+<rect x="250.0" y="288.7" width="52" height="86.3" rx="8" fill="#ec4899"/>
+<text x="276.0" y="278.7" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">8.4%</text>
+<text x="276.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">64</text>
+<rect x="320.0" y="292.8" width="52" height="82.2" rx="8" fill="#ec4899"/>
+<text x="346.0" y="282.8" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">8.0%</text>
+<text x="346.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">128</text>
+<text x="420" y="225" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#f8fafc">Reused requests</text>
+<rect x="420.0" y="225.0" width="52" height="150.0" rx="8" fill="#60a5fa"/>
+<text x="446.0" y="215.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">73</text>
+<text x="446.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">16</text>
+<rect x="490.0" y="237.3" width="52" height="137.7" rx="8" fill="#60a5fa"/>
+<text x="516.0" y="227.3" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">67</text>
+<text x="516.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">32</text>
+<rect x="560.0" y="288.7" width="52" height="86.3" rx="8" fill="#60a5fa"/>
+<text x="586.0" y="278.7" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">42</text>
+<text x="586.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">64</text>
+<rect x="630.0" y="292.8" width="52" height="82.2" rx="8" fill="#60a5fa"/>
+<text x="656.0" y="282.8" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">40</text>
+<text x="656.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">128</text>
+<text x="730" y="225" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#f8fafc">Cache-only quality</text>
+<rect x="730.0" y="225.0" width="52" height="150.0" rx="8" fill="#2dd4bf"/>
+<text x="756.0" y="215.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">0.236</text>
+<text x="756.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">16</text>
+<rect x="800.0" y="233.3" width="52" height="141.7" rx="8" fill="#2dd4bf"/>
+<text x="826.0" y="223.3" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">0.223</text>
+<text x="826.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">32</text>
+<rect x="870.0" y="244.1" width="52" height="130.9" rx="8" fill="#2dd4bf"/>
+<text x="896.0" y="234.1" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">0.206</text>
+<text x="896.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">64</text>
+<rect x="940.0" y="249.2" width="52" height="125.8" rx="8" fill="#2dd4bf"/>
+<text x="966.0" y="239.2" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#e5e7eb">0.198</text>
+<text x="966.0" y="399.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">128</text>
+<rect x="90" y="480" width="920" height="78" rx="12" fill="#111827" stroke="#263449"/>
+<line x1="110" y1="500" x2="990" y2="500" stroke="#ec4899" stroke-width="2"/>
+<text x="110" y="530" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#f8fafc">Interpretation</text>
+<text x="110" y="554" font-family="Arial, sans-serif" font-size="15" fill="#cbd5e1">Shared-prefix reuse exists in the workload: prefix_words=16 finds 73 reused requests, a 14.6% hit rate, and the highest cache-only quality.</text>
+</svg>

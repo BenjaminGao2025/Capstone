@@ -170,9 +170,16 @@ This branch adds a trace-level analysis for cache-aware prefix scoring. The
 method measures how often requests reuse the same prompt prefix and converts
 that signal into a cache-aware scheduling score.
 
-The controlled ratio sweep below varies the amount of shared setup context in a
+The LMSYS trace probe below analyzes the first 500 requests and finds measurable
+shared-prefix structure. The strongest setting is `prefix_words = 16`, with a
+14.6% cache hit rate, 73 reused-prefix requests, a largest shared group of 25,
+and cache-only quality of 0.236.
+
+![LMSYS offline cache-prefix probe](figures/cache_prefix_lmsys_offline.svg)
+
+The controlled ratio sweep varies the amount of shared setup context in a
 synthetic workload. As the shared-prefix ratio increases, the measured
-`cache_hit_rate` rises proportionally, which validates that the scoring feature
+`cache_hit_rate` rises proportionally, validating that the scoring feature
 responds to the workload structure it is designed to capture.
 
 ![Shared-prefix ratio sweep](figures/cache_prefix_ratio_sweep.svg)
@@ -185,6 +192,7 @@ cache-aware score has useful prefix structure to exploit.
 
 | Offline check | Main measurement | Takeaway |
 |---|---:|---|
+| LMSYS trace probe | 14.6% hit rate at `prefix_words=16` | Shared-prefix reuse exists in the trace. |
 | Shared-prefix ratio sweep | `cache_hit_rate` 0.00 → 1.00 | The signal scales with controlled prefix reuse. |
 | Workload-shape sweep | high / medium / zero reuse | The method distinguishes agent-like traffic from random-like traffic. |
 | Synthetic scoring run | `rank_corr`, `sjf_quality` | The cache bonus can be combined with the LTR score without replacing it. |

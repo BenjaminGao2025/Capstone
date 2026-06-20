@@ -130,7 +130,60 @@ shared-prefix structure to justify using the cache bonus?"
 | `rank_corr` | Correlation between scheduling score rank and true output-length rank. |
 | `sjf_quality` | Negative `rank_corr`; larger values better match shortest-job-first ordering. |
 
-## Local Sanity Check
+## LMSYS Trace Offline Probe
+
+The first trace-level probe uses the first 500 LMSYS requests and sweeps prefix
+lengths `16`, `32`, `64`, and `128`. This checks whether shared-prefix reuse is
+visible in the same family of traces used by the vLLM-LTR experiments.
+
+Files:
+
+```text
+results/cache-prefix-lmsys-offline-summary.json
+figures/cache_prefix_lmsys_offline.svg
+scripts/plot_cache_prefix_lmsys_offline.py
+```
+
+Command:
+
+```bash
+python3 scripts/plot_cache_prefix_lmsys_offline.py \
+  --input results/cache-prefix-lmsys-offline-summary.json \
+  --out figures/cache_prefix_lmsys_offline.svg
+```
+
+![LMSYS offline cache-prefix probe](../../figures/cache_prefix_lmsys_offline.svg)
+
+Summary:
+
+| `prefix_words` | `cache_hit_rate` | Reused requests | `cache_only_quality` |
+|---:|---:|---:|---:|
+| 16 | 14.6% | 73 | 0.236 |
+| 32 | 13.4% | 67 | 0.223 |
+| 64 | 8.4% | 42 | 0.206 |
+| 128 | 8.0% | 40 | 0.198 |
+
+The strongest first setting is `prefix_words = 16`: it finds the most reuse,
+the largest cache hit rate, and the highest cache-only quality. This supports
+using shared-prefix reuse as a candidate scheduler feature.
+
+Additional summary at `prefix_words = 16`:
+
+| Metric | Value |
+|---|---:|
+| Requests analyzed | 500 |
+| Reused-prefix requests | 73 |
+| Largest shared group | 25 |
+| Cache hit rate | 14.6% |
+| Cache-only quality | 0.236 |
+
+## Controlled Synthetic Checks
+
+The synthetic checks below are controlled experiments. They are included to
+verify that the cache-prefix measurement responds predictably when the workload
+structure changes.
+
+### Local Sanity Check
 
 The repository includes a tiny hand-written demo trace and a tiny baseline
 score file for checking that the script runs locally.
@@ -160,10 +213,10 @@ Expected behavior:
 - the output JSON should include `cache_only`, `base_ltr`, `combined`, and
   `best_combined_result` fields.
 
-## Controlled Offline Opportunity Sweep
+### Workload-Shape Opportunity Sweep
 
-To make the evidence clearer, the branch adds a controlled synthetic sweep with three
-workload shapes:
+To make the evidence clearer, the branch adds a controlled synthetic sweep with
+three workload shapes:
 
 - `agent_shared_prefix`: many requests share long setup prompts.
 - `mixed_prefix`: some requests share setup prompts and some are independent.
@@ -201,11 +254,11 @@ What this shows:
 This result defines the condition under which the method is expected to matter:
 repeated prompt prefixes must actually exist.
 
-## Shared-Prefix Ratio Sweep
+### Shared-Prefix Ratio Sweep
 
-The branch also adds a ratio sweep that controls how much of the workload contains a
-shared setup prefix. The trace size stays fixed at 40 requests, and the target
-shared-prefix ratio varies from 0% to 100%.
+The branch also adds a ratio sweep that controls how much of the workload
+contains a shared setup prefix. The trace size stays fixed at 40 requests, and
+the target shared-prefix ratio varies from 0% to 100%.
 
 Files:
 
@@ -239,7 +292,7 @@ This sweep gives a clearer data story than a single demo trace: the method's
 opportunity signal scales with the amount of repeated-prefix structure in the
 workload.
 
-## Synthetic Scoring Result
+### Synthetic Scoring Result
 
 The branch also includes one small synthetic scoring experiment. It checks whether the
 prefix-based calculation behaves as expected on a trace with known
