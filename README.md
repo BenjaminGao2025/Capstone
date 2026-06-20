@@ -9,6 +9,16 @@ The committed smoke test uses `facebook/opt-1.3b` to verify the complete
 pipeline before running the larger Llama workload. It is a functional check,
 not a statistically meaningful performance claim.
 
+## Team
+
+| Name | Student # | Role / main contribution |
+|---|---|---|
+| Yuze Gao | 2119104 | Core: LTR scheduler reproduction, OOD robustness study, mitigation design |
+| Yuh Jen Sun | 2109902 | Cache-aware prefix-scoring probe (LMSYS trace) |
+| Shun Huang | 2100618 | SLO-aware & Apt-Serve scheduling reproduction |
+| Chenxi Li | 2133321 | Smoke-test reproduction & charts |
+| Mengze Hu | 2135034 | PromptCache related-work review; KV-cache / batch-size measurement |
+
 ## Repository Layout
 
 ```text
