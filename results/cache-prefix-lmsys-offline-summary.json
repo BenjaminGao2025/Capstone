@@ -1,5 +1,12 @@
 {
-  "source": "cache-aware-prefix-probe-dark.pdf",
+  "source": "local_offline_lmsys_trace_probe",
+  "provenance": {
+    "artifact_type": "trace_level_summary",
+    "trace_window": "first 500 LMSYS requests",
+    "analysis": "shared-prefix reuse sweep over prefix_words = 16, 32, 64, 128",
+    "plot_script": "scripts/plot_cache_prefix_lmsys_trace_summary.py",
+    "archived_summary_reference": "cache-aware-prefix-probe-dark.pdf"
+  },
   "workload": "first 500 LMSYS requests",
   "method": "offline shared-prefix probe",
   "rows": [

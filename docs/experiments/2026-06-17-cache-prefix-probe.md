@@ -136,6 +136,12 @@ The first trace-level probe uses the first 500 LMSYS requests and sweeps prefix
 lengths `16`, `32`, `64`, and `128`. This checks whether shared-prefix reuse is
 visible in the same family of traces used by the vLLM-LTR experiments.
 
+The committed JSON is a trace-level summary artifact for this LMSYS window. It
+records the measured prefix-reuse counts, the sweep configuration, and the
+plotting script used to render the figure. The archived PDF is retained only as
+a local reference for the earlier visual report, not as the primary `source`
+field in the result JSON.
+
 Files:
 
 ```text
