@@ -1,4 +1,4 @@
-# Yuhjen Cache-Aware Prefix Scoring
+# Cache-Aware Prefix Scoring
 
 Date: 2026-06-17
 

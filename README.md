@@ -166,10 +166,9 @@ the earlier
 
 ## Cache-Aware Prefix Analysis
 
-Yuhjen's cache-aware prefix-scoring branch adds a trace-level analysis for
-shared-prefix opportunity. The method measures how often requests reuse the
-same prompt prefix and converts that signal into a cache-aware scheduling
-score.
+This branch adds a trace-level analysis for cache-aware prefix scoring. The
+method measures how often requests reuse the same prompt prefix and converts
+that signal into a cache-aware scheduling score.
 
 The controlled ratio sweep below varies the amount of shared setup context in a
 synthetic workload. As the shared-prefix ratio increases, the measured
@@ -177,6 +176,18 @@ synthetic workload. As the shared-prefix ratio increases, the measured
 responds to the workload structure it is designed to capture.
 
 ![Shared-prefix ratio sweep](figures/cache_prefix_ratio_sweep.svg)
+
+The workload-shape sweep separates three cases: agent-style shared prompts,
+mixed traffic, and random-like prompts. This helps identify when the
+cache-aware score has useful prefix structure to exploit.
+
+![Cache-prefix opportunity by workload shape](figures/cache_prefix_opportunity_sweep.svg)
+
+| Offline check | Main measurement | Takeaway |
+|---|---:|---|
+| Shared-prefix ratio sweep | `cache_hit_rate` 0.00 → 1.00 | The signal scales with controlled prefix reuse. |
+| Workload-shape sweep | high / medium / zero reuse | The method distinguishes agent-like traffic from random-like traffic. |
+| Synthetic scoring run | `rank_corr`, `sjf_quality` | The cache bonus can be combined with the LTR score without replacing it. |
 
 Details and reproduction commands are in the
 [cache-aware prefix-scoring report](docs/experiments/2026-06-17-cache-prefix-probe.md).
