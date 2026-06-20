@@ -164,6 +164,55 @@ Expected behavior:
 - the output JSON should include `cache_only`, `base_ltr`, `combined`, and
   `best_combined_result` fields.
 
+## Synthetic Offline Result
+
+Because I cannot run the large model yet, I added one small synthetic offline
+experiment. This is not a vLLM serving result. It does not measure TTFT,
+throughput, p99 latency, GPU memory, or end-to-end speed. It only checks
+whether my prefix-based calculation behaves as expected on a trace with known
+shared-prefix groups.
+
+Files:
+
+```text
+results/cache-prefix-probe-synthetic-trace.jsonl
+results/cache-prefix-probe-synthetic-ltr.json
+results/cache-prefix-probe-synthetic-output.json
+figures/cache_prefix_probe_synthetic.svg
+```
+
+Command:
+
+```bash
+python3 scripts/cache_prefix_probe.py \
+  --trace results/cache-prefix-probe-synthetic-trace.jsonl \
+  --result-json results/cache-prefix-probe-synthetic-ltr.json \
+  --n 20 \
+  --prefix-words 2 4 6 8 10 \
+  --weights 0.1 0.3 0.5 1.0 \
+  --out results/cache-prefix-probe-synthetic-output.json
+
+python3 scripts/plot_cache_prefix_probe.py \
+  --input results/cache-prefix-probe-synthetic-output.json \
+  --out figures/cache_prefix_probe_synthetic.svg
+```
+
+![Synthetic offline cache-prefix sanity check](../../figures/cache_prefix_probe_synthetic.svg)
+
+What this shows:
+
+- With short prefix keys (`prefix_words` 2 or 4), 16 of 20 requests share a
+  prefix with another request, so `cache_hit_rate = 0.80`.
+- With longer prefix keys (`prefix_words` 8 or 10), the synthetic prompts become
+  unique, so `cache_hit_rate = 0.00`.
+- The best combined ranking diagnostic stays close to the baseline LTR
+  diagnostic at small cache weight. This is useful as a sanity check because it
+  shows the cache bonus can be added without completely replacing the LTR score.
+
+The takeaway is limited but useful: the script can detect shared-prefix
+structure and produce a scheduler score file on a laptop. A real conclusion
+about latency still requires the later GPU serving experiment.
+
 ## Example Commands
 
 In-distribution LMSYS:

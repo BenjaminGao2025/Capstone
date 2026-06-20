@@ -1,0 +1,204 @@
+{
+  "trace": "results/cache-prefix-probe-synthetic-trace.jsonl",
+  "result_json": "results/cache-prefix-probe-synthetic-ltr.json",
+  "num_requests": 20,
+  "score_source": "pred_scores",
+  "results": [
+    {
+      "prefix_words": 2,
+      "unique_prefixes": 8,
+      "reused_prefix_groups": 4,
+      "requests_with_reused_prefix": 16,
+      "cache_hit_rate": 0.8,
+      "max_group_size": 4,
+      "cache_only": {
+        "rank_corr": 0.34135338345864663,
+        "sjf_quality": -0.34135338345864663
+      },
+      "base_ltr": {
+        "rank_corr": -0.9939849624060151,
+        "sjf_quality": 0.9939849624060151
+      },
+      "combined": [
+        {
+          "cache_weight": 0.1,
+          "rank_corr": -0.9834586466165414,
+          "sjf_quality": 0.9834586466165414
+        },
+        {
+          "cache_weight": 0.3,
+          "rank_corr": -0.924812030075188,
+          "sjf_quality": 0.924812030075188
+        },
+        {
+          "cache_weight": 0.5,
+          "rank_corr": -0.8270676691729323,
+          "sjf_quality": 0.8270676691729323
+        },
+        {
+          "cache_weight": 1.0,
+          "rank_corr": -0.4556390977443609,
+          "sjf_quality": 0.4556390977443609
+        }
+      ]
+    },
+    {
+      "prefix_words": 4,
+      "unique_prefixes": 8,
+      "reused_prefix_groups": 4,
+      "requests_with_reused_prefix": 16,
+      "cache_hit_rate": 0.8,
+      "max_group_size": 4,
+      "cache_only": {
+        "rank_corr": 0.34135338345864663,
+        "sjf_quality": -0.34135338345864663
+      },
+      "base_ltr": {
+        "rank_corr": -0.9939849624060151,
+        "sjf_quality": 0.9939849624060151
+      },
+      "combined": [
+        {
+          "cache_weight": 0.1,
+          "rank_corr": -0.9834586466165414,
+          "sjf_quality": 0.9834586466165414
+        },
+        {
+          "cache_weight": 0.3,
+          "rank_corr": -0.924812030075188,
+          "sjf_quality": 0.924812030075188
+        },
+        {
+          "cache_weight": 0.5,
+          "rank_corr": -0.8270676691729323,
+          "sjf_quality": 0.8270676691729323
+        },
+        {
+          "cache_weight": 1.0,
+          "rank_corr": -0.4556390977443609,
+          "sjf_quality": 0.4556390977443609
+        }
+      ]
+    },
+    {
+      "prefix_words": 6,
+      "unique_prefixes": 19,
+      "reused_prefix_groups": 1,
+      "requests_with_reused_prefix": 2,
+      "cache_hit_rate": 0.1,
+      "max_group_size": 2,
+      "cache_only": {
+        "rank_corr": 0.010526315789473684,
+        "sjf_quality": -0.010526315789473684
+      },
+      "base_ltr": {
+        "rank_corr": -0.9939849624060151,
+        "sjf_quality": 0.9939849624060151
+      },
+      "combined": [
+        {
+          "cache_weight": 0.1,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        },
+        {
+          "cache_weight": 0.3,
+          "rank_corr": -0.9714285714285714,
+          "sjf_quality": 0.9714285714285714
+        },
+        {
+          "cache_weight": 0.5,
+          "rank_corr": -0.9112781954887218,
+          "sjf_quality": 0.9112781954887218
+        },
+        {
+          "cache_weight": 1.0,
+          "rank_corr": -0.5849624060150376,
+          "sjf_quality": 0.5849624060150376
+        }
+      ]
+    },
+    {
+      "prefix_words": 8,
+      "unique_prefixes": 20,
+      "reused_prefix_groups": 0,
+      "requests_with_reused_prefix": 0,
+      "cache_hit_rate": 0.0,
+      "max_group_size": 1,
+      "cache_only": {
+        "rank_corr": -0.3804511278195489,
+        "sjf_quality": 0.3804511278195489
+      },
+      "base_ltr": {
+        "rank_corr": -0.9939849624060151,
+        "sjf_quality": 0.9939849624060151
+      },
+      "combined": [
+        {
+          "cache_weight": 0.1,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        },
+        {
+          "cache_weight": 0.3,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        },
+        {
+          "cache_weight": 0.5,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        },
+        {
+          "cache_weight": 1.0,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        }
+      ]
+    },
+    {
+      "prefix_words": 10,
+      "unique_prefixes": 20,
+      "reused_prefix_groups": 0,
+      "requests_with_reused_prefix": 0,
+      "cache_hit_rate": 0.0,
+      "max_group_size": 1,
+      "cache_only": {
+        "rank_corr": -0.3804511278195489,
+        "sjf_quality": 0.3804511278195489
+      },
+      "base_ltr": {
+        "rank_corr": -0.9939849624060151,
+        "sjf_quality": 0.9939849624060151
+      },
+      "combined": [
+        {
+          "cache_weight": 0.1,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        },
+        {
+          "cache_weight": 0.3,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        },
+        {
+          "cache_weight": 0.5,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        },
+        {
+          "cache_weight": 1.0,
+          "rank_corr": -0.9939849624060151,
+          "sjf_quality": 0.9939849624060151
+        }
+      ]
+    }
+  ],
+  "best_combined_result": {
+    "prefix_words": 6,
+    "cache_weight": 0.1,
+    "rank_corr": -0.9939849624060151,
+    "sjf_quality": 0.9939849624060151
+  }
+}
