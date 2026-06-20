@@ -175,7 +175,7 @@ shared-prefix structure. The strongest setting is `prefix_words = 16`, with a
 14.6% cache hit rate, 73 reused-prefix requests, a largest shared group of 25,
 and cache-only quality of 0.236.
 
-![LMSYS offline cache-prefix probe](figures/cache_prefix_lmsys_offline.svg)
+![LMSYS trace cache-prefix summary](figures/cache_prefix_lmsys_trace_summary.svg)
 
 The controlled ratio sweep varies the amount of shared setup context in a
 synthetic workload. As the shared-prefix ratio increases, the measured

@@ -140,19 +140,19 @@ Files:
 
 ```text
 results/cache-prefix-lmsys-offline-summary.json
-figures/cache_prefix_lmsys_offline.svg
-scripts/plot_cache_prefix_lmsys_offline.py
+figures/cache_prefix_lmsys_trace_summary.svg
+scripts/plot_cache_prefix_lmsys_trace_summary.py
 ```
 
 Command:
 
 ```bash
-python3 scripts/plot_cache_prefix_lmsys_offline.py \
+python3 scripts/plot_cache_prefix_lmsys_trace_summary.py \
   --input results/cache-prefix-lmsys-offline-summary.json \
-  --out figures/cache_prefix_lmsys_offline.svg
+  --out figures/cache_prefix_lmsys_trace_summary.svg
 ```
 
-![LMSYS offline cache-prefix probe](../../figures/cache_prefix_lmsys_offline.svg)
+![LMSYS trace cache-prefix summary](../../figures/cache_prefix_lmsys_trace_summary.svg)
 
 Summary:
 

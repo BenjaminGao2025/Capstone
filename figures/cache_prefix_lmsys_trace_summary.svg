@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="560" viewBox="0 0 1120 560">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="72" y="46" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f172a">LMSYS Trace Cache-Prefix Summary</text>
+<text x="72" y="74" font-family="Arial, sans-serif" font-size="14" fill="#475569">Offline prefix reuse analysis over the first 500 LMSYS requests.</text>
+<rect x="54" y="94" width="680" height="365" rx="12" fill="#f8fafc" stroke="#dbe3ef"/>
+<line x1="82" y1="408.0" x2="692" y2="408.0" stroke="#e2e8f0"/>
+<text x="70" y="412.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#64748b">0%</text>
+<line x1="82" y1="335.5" x2="692" y2="335.5" stroke="#e2e8f0"/>
+<text x="70" y="339.5" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#64748b">4%</text>
+<line x1="82" y1="263.0" x2="692" y2="263.0" stroke="#e2e8f0"/>
+<text x="70" y="267.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#64748b">8%</text>
+<line x1="82" y1="190.5" x2="692" y2="190.5" stroke="#e2e8f0"/>
+<text x="70" y="194.5" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#64748b">12%</text>
+<line x1="82" y1="118.0" x2="692" y2="118.0" stroke="#e2e8f0"/>
+<text x="70" y="122.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#64748b">16%</text>
+<line x1="82" y1="408" x2="692" y2="408" stroke="#94a3b8"/>
+<line x1="82" y1="118" x2="82" y2="408" stroke="#94a3b8"/>
+<text x="82.0" y="432" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">16</text>
+<text x="169.1" y="432" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">32</text>
+<text x="343.4" y="432" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">64</text>
+<text x="692.0" y="432" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">128</text>
+<polyline points="82.0,143.4 169.1,165.1 343.4,255.7 692.0,263.0" fill="none" stroke="#2563eb" stroke-width="4"/>
+<circle cx="82.0" cy="143.4" r="6" fill="#2563eb"/>
+<text x="82.0" y="131.4" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">14.6%</text>
+<circle cx="169.1" cy="165.1" r="6" fill="#2563eb"/>
+<text x="169.1" y="153.1" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">13.4%</text>
+<circle cx="343.4" cy="255.7" r="6" fill="#2563eb"/>
+<text x="343.4" y="243.7" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">8.4%</text>
+<circle cx="692.0" cy="263.0" r="6" fill="#2563eb"/>
+<text x="692.0" y="251.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">8.0%</text>
+<text x="387.0" y="456" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">prefix_words</text>
+<text x="24" y="282" transform="rotate(-90 24 282)" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">cache_hit_rate</text>
+<rect x="770" y="100" width="300" height="188" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="792" y="134" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#1e3a8a">Best setting</text>
+<text x="792" y="176" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="#2563eb">16 words</text>
+<text x="792" y="210" font-family="Arial, sans-serif" font-size="14" fill="#1e40af">14.6% cache hit rate</text>
+<text x="792" y="236" font-family="Arial, sans-serif" font-size="14" fill="#1e40af">73 reused requests out of 500</text>
+<text x="792" y="262" font-family="Arial, sans-serif" font-size="14" fill="#1e40af">largest shared group: 25</text>
+<rect x="770" y="318" width="300" height="112" rx="12" fill="#f8fafc" stroke="#dbe3ef"/>
+<text x="792" y="350" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a">Interpretation</text>
+<text x="792" y="377" font-family="Arial, sans-serif" font-size="13" fill="#475569">Shorter prefix keys expose more</text>
+<text x="792" y="397" font-family="Arial, sans-serif" font-size="13" fill="#475569">shared-prefix reuse in this trace.</text>
+<text x="792" y="417" font-family="Arial, sans-serif" font-size="13" fill="#475569">That is the opportunity signal.</text>
+</svg>
