@@ -198,6 +198,14 @@ drop by itself.
 
 ![Cache-prefix ranking ablation](figures/cache_prefix_ranking_ablation.svg)
 
+Conclusion: the cache-prefix probe finds real shared-prefix opportunity in the
+LMSYS trace, but adding the cache bonus does not improve the committed offline
+ranking diagnostic. The base LTR ranking signal still drops on the shifted
+ShareGPT trace, and the synthetic cache-weight sweep shows that large cache
+weights can make ranking quality worse. This method is therefore best framed as
+a prefill/TTFT opportunity signal that needs serving-level validation, not as a
+standalone fix for OOD ranking.
+
 | Offline check | Main measurement | Takeaway |
 |---|---:|---|
 | LMSYS trace probe | 14.6% hit rate at `prefix_words=16` | Shared-prefix reuse exists in the trace. |
