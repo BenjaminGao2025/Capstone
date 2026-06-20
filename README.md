@@ -190,9 +190,15 @@ Peak in-distribution gain: **8.1× mean TTFT** at rate 8.
 > We characterised the robustness boundary of internal-signal LLM scheduling:
 > the LTR ranker achieves up to **8.1× mean TTFT in-distribution** but exhibits
 > complete tail-latency inversion and engine failure **out-of-distribution**.
-> The deployable head gain (mean-TTFT, no crash, no p99 regression) is
-> approximately **1.7× at rate 4** on the OOD ShareGPT workload.
-> We do **not** claim "8× everywhere."
+> On the OOD ShareGPT workload at rate 4, raw LTR improves *mean* TTFT by
+> ~1.72×, **but this number is not deployable on its own**: at the same
+> operating point it incurs a **1.53× p99 tail regression**, and at rate 8 the
+> engine **crashes**. The only configuration that is actually deployable — no
+> p99 regression and no crash — is the waiting-time aging gate, whose mean-TTFT
+> gain shrinks to roughly **~1.1×** (≈0.94× mean latency); that mitigation
+> result is currently **simulation only and still needs real-vLLM validation on
+> the RTX 3090**. We do **not** claim "8× everywhere," and we do **not** claim a
+> free ~1.7× deployable gain.
 
 ### Diagnostic Figure
 
@@ -217,8 +223,11 @@ mean_service_time to FCFS) breaks the starvation loop:
 | ∞ (LTR) | 3.108× | 0.741× | maximum mean, severe p99 tail |
 
 At W = 8, the aging gate achieves **both** lower mean and lower p99 than pure
-FCFS on the OOD workload.  See `scripts/confidence_gate_sim.py` for the
-simulation; real-vLLM implementation remains future work.
+FCFS on the OOD workload in this **single-load (ρ=0.97) simulation with
+synthetic scores**.  This is an existence proof at one extreme load, not a
+general or measured result.  See `scripts/confidence_gate_sim.py` for the
+simulation; a load sweep and a real-vLLM implementation on the RTX 3090 remain
+future work.
 
 ![Aging gate simulation](figures/confidence_gate_sim.png)
 
