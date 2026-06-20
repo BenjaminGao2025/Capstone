@@ -1,0 +1,29 @@
+{
+  "source": "committed_cache_prefix_ranking_ablation",
+  "source_files": [
+    "results/cache-prefix-lmsys-offline-summary.json",
+    "results/llama3-8b/cross-tau-matrix.json",
+    "results/cache-prefix-probe-synthetic-output.json"
+  ],
+  "lmsys_prefix_probe": {
+    "prefix_words": 16,
+    "cache_hit_rate": 0.146,
+    "reused_requests": 73,
+    "reused_prefix_groups": 11,
+    "largest_shared_group": 25
+  },
+  "cross_trace_ranking_quality": {
+    "metric": "absolute Kendall tau for lmsys-score",
+    "in_distribution_lmsys": 0.6402014070785366,
+    "shifted_sharegpt": 0.419998447581501,
+    "drop": 0.22020295949703556
+  },
+  "synthetic_cache_bonus_effect": {
+    "metric": "SJF-quality rank diagnostic",
+    "base_ltr": 0.9939849624060151,
+    "best_combined": 0.9939849624060151,
+    "best_delta": 0.0,
+    "weight_1_min_quality_when_cache_present": 0.4556390977443609
+  },
+  "conclusion": "The cache-prefix signal finds reuse opportunity, but the committed ablation does not show a ranking-quality gain from adding the cache bonus; the OOD ranking drop remains."
+}

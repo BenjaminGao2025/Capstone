@@ -358,6 +358,54 @@ What this shows:
 The takeaway is that the script can detect shared-prefix structure and produce
 a scheduler score file from trace data.
 
+## Cache-Aware Ranking Ablation
+
+The final ablation combines the committed prefix-reuse evidence, the existing
+cross-trace Kendall tau matrix, and the synthetic cache-weight sweep. Its
+purpose is to answer the narrower evaluation question: does adding the
+cache-aware feature improve ranking under distribution shift?
+
+Files:
+
+```text
+results/cache-prefix-ranking-ablation-summary.json
+figures/cache_prefix_ranking_ablation.svg
+scripts/plot_cache_prefix_ranking_ablation.py
+```
+
+Command:
+
+```bash
+python3 scripts/plot_cache_prefix_ranking_ablation.py
+```
+
+![Cache-prefix ranking ablation](../../figures/cache_prefix_ranking_ablation.svg)
+
+Summary:
+
+| Evidence | Measurement | Result |
+|---|---:|---|
+| LMSYS prefix opportunity | `cache_hit_rate` at `prefix_words = 16` | 14.6% |
+| LMSYS prefix opportunity | Reused-prefix requests | 73 / 500 |
+| LMSYS prefix opportunity | Largest shared-prefix group | 25 |
+| Base LTR ranking, in distribution | `abs(Kendall tau)` on LMSYS | 0.640 |
+| Base LTR ranking, shifted trace | `abs(Kendall tau)` on ShareGPT | 0.420 |
+| Synthetic cache-weight sweep | Best combined SJF-quality delta vs base LTR | +0.000 |
+| Synthetic cache-weight sweep | SJF-quality at cache weight 1.0 when cache is present | 0.456 |
+
+Three-sentence conclusion:
+
+The cache-aware feature finds real prefix-reuse opportunity in the
+in-distribution LMSYS trace, with a 14.6% hit rate at `prefix_words = 16`, but
+the committed ranking ablation does not show an improvement in ranking quality
+when the cache bonus is added to LTR. The base LTR signal itself weakens under
+the shifted ShareGPT trace, dropping from 0.640 to 0.420 absolute Kendall tau,
+and the synthetic cache-weight sweep shows that small cache weights are at best
+neutral while large cache weights can degrade SJF-quality. Therefore,
+`final_score = z_ltr + cache_weight * z_cache_bonus` is useful as a
+prefill/TTFT opportunity signal, but it does not fix the OOD ranking problem
+without a serving-level validation step.
+
 ## Example Commands
 
 In-distribution LMSYS:

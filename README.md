@@ -190,12 +190,20 @@ cache-aware score has useful prefix structure to exploit.
 
 ![Cache-prefix opportunity by workload shape](figures/cache_prefix_opportunity_sweep.svg)
 
+The ranking ablation compares the measured prefix opportunity with the existing
+in-distribution and shifted-trace ranking diagnostics. It shows the honest
+result: shared-prefix reuse exists, but adding the cache bonus is neutral at
+best in the committed offline ranking check and does not fix the OOD ranking
+drop by itself.
+
+![Cache-prefix ranking ablation](figures/cache_prefix_ranking_ablation.svg)
+
 | Offline check | Main measurement | Takeaway |
 |---|---:|---|
 | LMSYS trace probe | 14.6% hit rate at `prefix_words=16` | Shared-prefix reuse exists in the trace. |
 | Shared-prefix ratio sweep | `cache_hit_rate` 0.00 → 1.00 | The signal scales with controlled prefix reuse. |
 | Workload-shape sweep | high / medium / zero reuse | The method distinguishes agent-like traffic from random-like traffic. |
-| Synthetic scoring run | `rank_corr`, `sjf_quality` | The cache bonus can be combined with the LTR score without replacing it. |
+| Ranking ablation | 0.640 → 0.420 absolute tau; best cache delta +0.000 | The cache bonus is a prefill/TTFT opportunity signal, not an OOD ranking fix. |
 
 Details and reproduction commands are in the
 [cache-aware prefix-scoring report](docs/experiments/2026-06-17-cache-prefix-probe.md).
