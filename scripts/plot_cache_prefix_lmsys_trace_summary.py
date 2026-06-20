@@ -35,6 +35,7 @@ def render_svg(report):
 
     hit_points = [(x_for(index), y_for_hit(row["cache_hit_rate"])) for index, row in enumerate(rows)]
     best = max(rows, key=lambda row: row["cache_hit_rate"])
+    best_prefix_groups = best.get("reused_prefix_groups")
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
@@ -78,8 +79,8 @@ def render_svg(report):
         '<text x="445" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">73 / 500</text>',
         '<text x="625" y="486" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">largest group</text>',
         '<text x="625" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">25</text>',
-        '<text x="775" y="486" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">quality</text>',
-        '<text x="775" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">0.236</text>',
+        '<text x="775" y="486" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">reused groups</text>',
+        f'<text x="775" y="522" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">{best_prefix_groups}</text>',
         '<text x="54" y="586" font-family="Arial, sans-serif" font-size="12" fill="#4b5563">Takeaway: reusable prefix structure is measurable in this trace and is strongest at the shortest tested prefix length.</text>',
         '</svg>',
     ])

@@ -138,14 +138,15 @@ visible in the same family of traces used by the vLLM-LTR experiments.
 
 The committed JSON is a trace-level summary artifact for this LMSYS window. It
 records the measured prefix-reuse counts, the sweep configuration, and the
-plotting script used to render the figure. The archived PDF is retained only as
-a local reference for the earlier visual report, not as the primary `source`
-field in the result JSON.
+plotting script used to render the figure. The RunPod recomputation log is
+committed with the results so the prefix-reuse counts can be checked without
+relying on the earlier visual report.
 
 Files:
 
 ```text
 results/cache-prefix-lmsys-offline-summary.json
+results/cache-prefix-lmsys-runpod-recompute.log
 figures/cache_prefix_lmsys_trace_summary.svg
 scripts/summarize_lmsys_prefix_reuse.py
 scripts/plot_cache_prefix_lmsys_trace_summary.py
@@ -173,16 +174,18 @@ python3 scripts/plot_cache_prefix_lmsys_trace_summary.py \
 
 Summary:
 
-| `prefix_words` | `cache_hit_rate` | Reused requests | `cache_only_quality` |
-|---:|---:|---:|---:|
-| 16 | 14.6% | 73 | 0.236 |
-| 32 | 13.4% | 67 | 0.223 |
-| 64 | 8.4% | 42 | 0.206 |
-| 128 | 8.0% | 40 | 0.198 |
+| `prefix_words` | `cache_hit_rate` | Reused requests | Reused groups | Largest group |
+|---:|---:|---:|---:|---:|
+| 16 | 14.6% | 73 | 11 | 25 |
+| 32 | 13.4% | 67 | 10 | 25 |
+| 64 | 8.4% | 42 | 9 | 13 |
+| 128 | 8.0% | 40 | 8 | 13 |
 
 The strongest first setting is `prefix_words = 16`: it finds the most reuse,
-the largest cache hit rate, and the highest cache-only quality. This supports
-using shared-prefix reuse as a candidate scheduler feature.
+the largest cache hit rate, and the largest shared-prefix group. This supports
+using shared-prefix reuse as a candidate scheduler feature. This trace export
+does not include output-length labels, so rank-quality diagnostics are left to
+the synthetic scoring checks below.
 
 Additional summary at `prefix_words = 16`:
 
@@ -190,9 +193,9 @@ Additional summary at `prefix_words = 16`:
 |---|---:|
 | Requests analyzed | 500 |
 | Reused-prefix requests | 73 |
+| Reused-prefix groups | 11 |
 | Largest shared group | 25 |
 | Cache hit rate | 14.6% |
-| Cache-only quality | 0.236 |
 
 ## Controlled Synthetic Checks
 

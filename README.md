@@ -173,7 +173,7 @@ that signal into a cache-aware scheduling score.
 The LMSYS trace probe below analyzes the first 500 requests and finds measurable
 shared-prefix structure. The strongest setting is `prefix_words = 16`, with a
 14.6% cache hit rate, 73 reused-prefix requests, a largest shared group of 25,
-and cache-only quality of 0.236.
+and 11 reused-prefix groups.
 
 ![LMSYS trace cache-prefix summary](figures/cache_prefix_lmsys_trace_summary.svg)
 
