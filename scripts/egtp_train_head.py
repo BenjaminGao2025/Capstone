@@ -55,14 +55,16 @@ def mlp_fit(X, y, hidden=256, epochs=60, lr=1e-3):
 
 
 def main():
+    if DEV == "cpu":
+        torch.set_num_threads(1)
     train = load("lmsys_train")
     evals = {e: load(e) for e in EVALS}
-    ytr = torch.tensor(np.log(train["lens"].astype(np.float32)), device=DEV)
+    ytr = torch.from_numpy(np.log(train["lens"].astype(np.float32))).to(DEV)
 
     print(f"train n={len(ytr)} on {DEV}")
     best = None
     for v in VARIANTS:
-        Xtr = torch.tensor(train[v].astype(np.float32), device=DEV)
+        Xtr = torch.from_numpy(train[v].astype(np.float32)).to(DEV)
         mu, sd = Xtr.mean(0, keepdim=True), Xtr.std(0, keepdim=True) + 1e-6
         Xtr = (Xtr - mu) / sd
 
@@ -75,7 +77,7 @@ def main():
         ]:
             taus = {}
             for e in EVALS:
-                Xe = torch.tensor(evals[e][v].astype(np.float32), device=DEV)
+                Xe = torch.from_numpy(evals[e][v].astype(np.float32)).to(DEV)
                 Xe = (Xe - mu) / sd
                 with torch.no_grad():
                     pred = predict(Xe).cpu().numpy()
