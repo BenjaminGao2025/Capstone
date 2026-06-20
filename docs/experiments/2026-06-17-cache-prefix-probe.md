@@ -329,14 +329,16 @@ claim.
 
 ## Proposed Next Validation
 
-When a large-model environment is available, the next validation would be one
-controlled serving comparison:
+The next validation should stay aligned with my method instead of copying the
+team's latency table. I would validate it in three stages:
 
-```text
-FCFS vs original LTR vs cache-aware LTR
-```
+1. Run the prefix-opportunity sweep on a real trace without starting vLLM.
+2. If repeated prefixes exist, export a cache-aware score file and compare
+   offline ranking diagnostics against the no-cache score.
+3. Only after that, ask a teammate with the CUDA vLLM-LTR environment to run a
+   serving check that uses the exported score file.
 
-The minimum useful setting is one in-distribution LMSYS run at rate 8 with 500
-requests, using the same environment as the formal Llama-3-8B reproduction.
-If that run shows no latency improvement, the method should be reported as an
-offline negative finding rather than expanded into a larger sweep.
+The key first question is: "does this workload contain enough shared-prefix
+structure for my cache-aware score to matter?" If the offline prefix
+opportunity is near zero, then the method should be reported as not applicable
+to that workload rather than pushed into a larger GPU run.
