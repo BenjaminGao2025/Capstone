@@ -167,7 +167,13 @@ the earlier
 ## Project Documents
 
 - [vLLM-LTR reproduction milestone](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
-- [Yuhjen cache-aware scheduling probe](docs/experiments/2026-06-17-cache-prefix-probe.md)
 - [Roadmap](docs/roadmap-v0.1.md)
 - [Related-work summaries](docs/related-work/)
 - [Presentation material](docs/presentation/)
+
+## Individual Method Prototypes
+
+- [Yuhjen cache-aware prefix scoring](docs/experiments/2026-06-17-cache-prefix-probe.md):
+  offline shared-prefix analysis that computes `cache_bonus`, `cache_hit_rate`,
+  `rank_corr`, and `sjf_quality`. This is not a FCFS/LTR latency benchmark and
+  does not report throughput, TTFT, or p99 latency.
