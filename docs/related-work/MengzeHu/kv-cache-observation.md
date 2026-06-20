@@ -1,0 +1,3 @@
+# KV Cache Observation
+
+The experiment shows that GPU memory usage increases as prompt length and batch size grow. Longer prompts require more KV-cache storage because the model needs to keep more key/value states in memory. As request length increases, the maximum achievable batch size decreases due to GPU memory limitations. This trend demonstrates why efficient KV-cache management techniques such as PagedAttention are important for scalable LLM serving.
