@@ -1,12 +1,16 @@
-# Yuhjen Cache-Aware Scheduling Probe
+# Yuhjen Cache-Aware Scheduling Method Draft
 
 Date: 2026-06-17
 
-## My Method Status
+## Status
 
-My contribution is a small cache-aware scheduling method that can be tested
-without running the full large-model serving experiment. Instead of changing
-vLLM first, I start with an offline probe: read a request trace, detect whether
+This is a method draft and local sanity-check scaffold. I have not run the
+large-model serving experiment yet, so this document does not report project
+results, latency numbers, throughput, TTFT, or p99 latency.
+
+The purpose of this branch is to prepare my own method so it can be tested
+later when a CUDA/vLLM-LTR environment is available. Instead of changing vLLM
+first, I start with an offline probe: read a request trace, detect whether
 multiple prompts share the same prefix, and turn that prefix reuse into an
 extra scheduling score.
 
@@ -16,8 +20,8 @@ The method keeps the base LTR idea, but adds my own cache signal:
 final_score = normalized_ltr_score + cache_weight * normalized_cache_bonus
 ```
 
-This is not a large-model result yet. It is a reproducible method prototype
-that shows how my cache-aware idea can be measured first and then passed into a
+This is not a large-model result. It is a reproducible method prototype that
+shows how my cache-aware idea could be measured first and then passed into a
 future serving run through a score file.
 
 ## Goal
@@ -94,9 +98,9 @@ can be passed into the existing scheduler integration through `IPT_SCORE_FILE`,
 so the method has a concrete path from offline prototype to later GPU serving
 experiment.
 
-## How My Calculation Is Different
+## Planned Calculation
 
-This result is not calculated the same way as the team's large serving
+This planned calculation is not the same as the team's large serving
 benchmarks. I am not reporting throughput, TTFT, p99 latency, or completed
 request count here, because those require a GPU serving run.
 
@@ -124,15 +128,16 @@ The final score is:
 final_score = z_ltr_score + cache_weight * z_cache_bonus
 ```
 
-The output is therefore a scheduler-score diagnostic, not a latency benchmark.
+The future output would be a scheduler-score diagnostic, not a latency benchmark.
 It answers: "does my cache-aware feature change ranking in a measurable way?"
 The later GPU experiment would answer: "does that ranking reduce TTFT or tail
 latency?"
 
-## Smoke Check
+## Local Sanity Check
 
-The repository includes a tiny hand-written demo trace and a tiny baseline LTR
-score file:
+The repository includes a tiny hand-written demo trace and a tiny baseline
+score file. These are only for checking that the script runs locally; they are
+not project results.
 
 ```text
 results/cache-prefix-probe-demo-trace.jsonl
@@ -148,7 +153,7 @@ python3 scripts/cache_prefix_probe.py \
   --n 8 \
   --prefix-words 6 10 \
   --weights 0.1 0.5 1.0 \
-  --out results/cache-prefix-probe-demo-output.json
+  --out /tmp/cache-prefix-probe-demo-output.json
 ```
 
 Expected behavior:
@@ -181,9 +186,10 @@ python3 /hy-tmp/scripts/cache_prefix_probe.py \
   --out /hy-tmp/results/cache-prefix-probe-sharegpt.json
 ```
 
-## How to Read My Result
+## How to Read Future Output
 
-My output JSON uses different fields from the serving benchmark JSON:
+The output JSON from a future run uses different fields from the serving
+benchmark JSON:
 
 - `requests_with_reused_prefix`: how many requests share a prefix with another
   request.
@@ -201,14 +207,14 @@ The two ranking fields are:
 - `sjf_quality`: negative `rank_corr`, because a shortest-job-first style
   scheduler is better when high priority is associated with shorter output.
 
-The signal is promising if:
+The signal would be promising if:
 
 - `combined` improves over `base_ltr`, especially on OOD data, or
 - it does not improve rank correlation but shows many reused-prefix opportunities,
   which means it may still be useful for TTFT/prefill latency in a real serving
   experiment.
 
-## What This Contributes
+## What This Branch Contributes
 
 This contribution is different from the team's large reproduction run. It does
 not claim that cache-aware scheduling is faster yet. What it contributes is:
@@ -216,7 +222,7 @@ not claim that cache-aware scheduling is faster yet. What it contributes is:
 - a concrete cache-aware scoring rule;
 - a script that measures prefix reuse in a trace;
 - a script that exports cache-aware scheduler scores;
-- a no-GPU smoke test that other teammates can rerun;
+- a no-GPU local sanity check that other teammates can rerun;
 - a clear next step for a teammate with the CUDA vLLM-LTR environment.
 
 This lets me contribute code and methodology now, even before I can run the
@@ -224,15 +230,16 @@ large model myself.
 
 ## Limitation
 
-This probe does not prove end-to-end latency improvement yet. It only checks
-whether the cache-aware idea is measurable and easy to plug into the scheduler.
-The cache bonus can also hurt if prefix reuse does not align with shorter
-latency or better batching. A real serving experiment is required before making
-any performance claim.
+This draft does not prove end-to-end latency improvement. It only prepares a
+cache-aware idea that can later be checked in the scheduler. The cache bonus
+can also hurt if prefix reuse does not align with shorter latency or better
+batching. A real serving experiment is required before making any performance
+claim.
 
-## Next Step
+## Proposed Next Validation
 
-The next experimental step is to run one controlled serving comparison:
+When a large-model environment is available, the next validation would be one
+controlled serving comparison:
 
 ```text
 FCFS vs original LTR vs cache-aware LTR
@@ -241,4 +248,4 @@ FCFS vs original LTR vs cache-aware LTR
 The minimum useful setting is one in-distribution LMSYS run at rate 8 with 500
 requests, using the same environment as the formal Llama-3-8B reproduction.
 If that run shows no latency improvement, the method should be reported as an
-offline negative result rather than expanded into a larger sweep.
+offline negative finding rather than expanded into a larger sweep.
