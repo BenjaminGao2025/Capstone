@@ -56,7 +56,7 @@ def load_requests(trace_path, limit):
             row = json.loads(line)
             prompt = extract_prompt(row)
             output_length = extract_output_length(row)
-            if prompt is None or output_length is None:
+            if prompt is None:
                 continue
             requests.append((prompt, output_length))
             if len(requests) >= limit:
@@ -69,6 +69,8 @@ def prefix_for(prompt, prefix_words):
 
 
 def standardize(numbers):
+    if not numbers:
+        return []
     numbers = [float(x) for x in numbers]
     mean = sum(numbers) / len(numbers)
     variance = sum((x - mean) ** 2 for x in numbers) / len(numbers)
@@ -102,6 +104,8 @@ def correlation(x_values, y_values):
 
 
 def ranking_quality(scores, output_lengths):
+    if not scores or not output_lengths or len(scores) != len(output_lengths):
+        return None
     if min(scores) == max(scores):
         return None
     score_ranks = simple_rank(scores)
@@ -117,7 +121,10 @@ def summarize(prompts, output_lengths, prefix_words):
     counts = Counter(prefixes)
     group_sizes = [counts[prefix] for prefix in prefixes]
     raw_bonus = [math.log1p(group_size - 1) * prefix_words for group_size in group_sizes]
-    cache_only_quality = ranking_quality(standardize(raw_bonus), output_lengths)
+    complete_output_lengths = all(output_length is not None for output_length in output_lengths)
+    cache_only_quality = None
+    if complete_output_lengths:
+        cache_only_quality = ranking_quality(standardize(raw_bonus), output_lengths)
     reused_requests = sum(1 for size in group_sizes if size > 1)
     max_group_size = max(group_sizes) if group_sizes else 0
     cache_hit_rate = reused_requests / len(prompts) if prompts else 0.0
