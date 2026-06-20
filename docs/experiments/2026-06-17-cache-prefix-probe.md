@@ -147,10 +147,21 @@ Files:
 ```text
 results/cache-prefix-lmsys-offline-summary.json
 figures/cache_prefix_lmsys_trace_summary.svg
+scripts/summarize_lmsys_prefix_reuse.py
 scripts/plot_cache_prefix_lmsys_trace_summary.py
 ```
 
-Command:
+RunPod recomputation command:
+
+```bash
+python3 scripts/summarize_lmsys_prefix_reuse.py \
+  --trace /hy-tmp/vllm-ltr/benchmarks/lmsys-Meta-Llama-3-8B-Instruct-t1.0-s0-l8192-c10000-rFalse.jsonl \
+  --limit 500 \
+  --prefix-words 16 32 64 128 \
+  --out results/cache-prefix-lmsys-offline-summary.json
+```
+
+Figure command:
 
 ```bash
 python3 scripts/plot_cache_prefix_lmsys_trace_summary.py \
