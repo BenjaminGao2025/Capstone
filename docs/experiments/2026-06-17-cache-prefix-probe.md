@@ -136,15 +136,33 @@ The first trace-level probe uses the first 500 LMSYS requests and sweeps prefix
 lengths `16`, `32`, `64`, and `128`. This checks whether shared-prefix reuse is
 visible in the same family of traces used by the vLLM-LTR experiments.
 
+The committed JSON is a trace-level summary artifact for this LMSYS window. It
+records the measured prefix-reuse counts, the sweep configuration, and the
+plotting script used to render the figure. The RunPod recomputation log is
+committed with the results so the prefix-reuse counts can be checked without
+relying on the earlier visual report.
+
 Files:
 
 ```text
 results/cache-prefix-lmsys-offline-summary.json
+results/cache-prefix-lmsys-runpod-recompute.log
 figures/cache_prefix_lmsys_trace_summary.svg
+scripts/summarize_lmsys_prefix_reuse.py
 scripts/plot_cache_prefix_lmsys_trace_summary.py
 ```
 
-Command:
+RunPod recomputation command:
+
+```bash
+python3 scripts/summarize_lmsys_prefix_reuse.py \
+  --trace /hy-tmp/vllm-ltr/benchmarks/lmsys-Meta-Llama-3-8B-Instruct-t1.0-s0-l8192-c10000-rFalse.jsonl \
+  --limit 500 \
+  --prefix-words 16 32 64 128 \
+  --out results/cache-prefix-lmsys-offline-summary.json
+```
+
+Figure command:
 
 ```bash
 python3 scripts/plot_cache_prefix_lmsys_trace_summary.py \
@@ -156,16 +174,18 @@ python3 scripts/plot_cache_prefix_lmsys_trace_summary.py \
 
 Summary:
 
-| `prefix_words` | `cache_hit_rate` | Reused requests | `cache_only_quality` |
-|---:|---:|---:|---:|
-| 16 | 14.6% | 73 | 0.236 |
-| 32 | 13.4% | 67 | 0.223 |
-| 64 | 8.4% | 42 | 0.206 |
-| 128 | 8.0% | 40 | 0.198 |
+| `prefix_words` | `cache_hit_rate` | Reused requests | Reused groups | Largest group |
+|---:|---:|---:|---:|---:|
+| 16 | 14.6% | 73 | 11 | 25 |
+| 32 | 13.4% | 67 | 10 | 25 |
+| 64 | 8.4% | 42 | 9 | 13 |
+| 128 | 8.0% | 40 | 8 | 13 |
 
 The strongest first setting is `prefix_words = 16`: it finds the most reuse,
-the largest cache hit rate, and the highest cache-only quality. This supports
-using shared-prefix reuse as a candidate scheduler feature.
+the largest cache hit rate, and the largest shared-prefix group. This supports
+using shared-prefix reuse as a candidate scheduler feature. This trace export
+does not include output-length labels, so rank-quality diagnostics are left to
+the synthetic scoring checks below.
 
 Additional summary at `prefix_words = 16`:
 
@@ -173,9 +193,9 @@ Additional summary at `prefix_words = 16`:
 |---|---:|
 | Requests analyzed | 500 |
 | Reused-prefix requests | 73 |
+| Reused-prefix groups | 11 |
 | Largest shared group | 25 |
 | Cache hit rate | 14.6% |
-| Cache-only quality | 0.236 |
 
 ## Controlled Synthetic Checks
 
@@ -337,6 +357,54 @@ What this shows:
 
 The takeaway is that the script can detect shared-prefix structure and produce
 a scheduler score file from trace data.
+
+## Cache-Aware Ranking Ablation
+
+The final ablation combines the committed prefix-reuse evidence, the existing
+cross-trace Kendall tau matrix, and the synthetic cache-weight sweep. Its
+purpose is to answer the narrower evaluation question: does adding the
+cache-aware feature improve ranking under distribution shift?
+
+Files:
+
+```text
+results/cache-prefix-ranking-ablation-summary.json
+figures/cache_prefix_ranking_ablation.svg
+scripts/plot_cache_prefix_ranking_ablation.py
+```
+
+Command:
+
+```bash
+python3 scripts/plot_cache_prefix_ranking_ablation.py
+```
+
+![Cache-prefix ranking ablation](../../figures/cache_prefix_ranking_ablation.svg)
+
+Summary:
+
+| Evidence | Measurement | Result |
+|---|---:|---|
+| LMSYS prefix opportunity | `cache_hit_rate` at `prefix_words = 16` | 14.6% |
+| LMSYS prefix opportunity | Reused-prefix requests | 73 / 500 |
+| LMSYS prefix opportunity | Largest shared-prefix group | 25 |
+| Base LTR ranking, in distribution | `abs(Kendall tau)` on LMSYS | 0.640 |
+| Base LTR ranking, shifted trace | `abs(Kendall tau)` on ShareGPT | 0.420 |
+| Synthetic cache-weight sweep | Best combined SJF-quality delta vs base LTR | +0.000 |
+| Synthetic cache-weight sweep | SJF-quality at cache weight 1.0 when cache is present | 0.456 |
+
+Three-sentence conclusion:
+
+The cache-aware feature finds real prefix-reuse opportunity in the
+in-distribution LMSYS trace, with a 14.6% hit rate at `prefix_words = 16`, but
+the committed ranking ablation does not show an improvement in ranking quality
+when the cache bonus is added to LTR. The base LTR signal itself weakens under
+the shifted ShareGPT trace, dropping from 0.640 to 0.420 absolute Kendall tau,
+and the synthetic cache-weight sweep shows that small cache weights are at best
+neutral while large cache weights can degrade SJF-quality. Therefore,
+`final_score = z_ltr + cache_weight * z_cache_bonus` is useful as a
+prefill/TTFT opportunity signal, but it does not fix the OOD ranking problem
+without a serving-level validation step.
 
 ## Example Commands
 
