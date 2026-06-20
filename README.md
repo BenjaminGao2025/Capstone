@@ -164,6 +164,19 @@ at rate 8 the mis-ranked LTR arm exhausts swap and crashes the engine. See the
 the earlier
 [reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md).
 
+## Offline Method Check
+
+Yuhjen's cache-aware prefix-scoring branch currently includes a synthetic
+offline sanity check. This is not a large-model or vLLM serving result; it does
+not report throughput, TTFT, p99 latency, or GPU memory. It only verifies that
+the shared-prefix scoring calculation can detect repeated-prefix structure and
+produce scheduler-ranking diagnostics on a laptop.
+
+![Synthetic offline cache-prefix sanity check](figures/cache_prefix_probe_synthetic.svg)
+
+Details and reproduction commands are in the
+[cache-aware scheduling method draft](docs/experiments/2026-06-17-cache-prefix-probe.md).
+
 ## Project Documents
 
 - [vLLM-LTR reproduction milestone](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
