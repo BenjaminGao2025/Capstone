@@ -94,6 +94,41 @@ can be passed into the existing scheduler integration through `IPT_SCORE_FILE`,
 so the method has a concrete path from offline prototype to later GPU serving
 experiment.
 
+## How My Calculation Is Different
+
+This result is not calculated the same way as the team's large serving
+benchmarks. I am not reporting throughput, TTFT, p99 latency, or completed
+request count here, because those require a GPU serving run.
+
+My offline calculation has four steps:
+
+1. Normalize each prompt by lowercasing it and collapsing repeated spaces.
+2. Extract the first `prefix_words` words as the request's prefix key.
+3. Count how many requests share the same prefix key.
+4. Convert that repeated-prefix count into a cache bonus:
+
+```text
+cache_bonus = log1p(shared_prefix_group_size - 1) * prefix_words
+```
+
+Then I standardize the LTR score and the cache bonus so they are on comparable
+scales:
+
+```text
+z = (value - mean) / std
+```
+
+The final score is:
+
+```text
+final_score = z_ltr_score + cache_weight * z_cache_bonus
+```
+
+The output is therefore a scheduler-score diagnostic, not a latency benchmark.
+It answers: "does my cache-aware feature change ranking in a measurable way?"
+The later GPU experiment would answer: "does that ranking reduce TTFT or tail
+latency?"
+
 ## Smoke Check
 
 The repository includes a tiny hand-written demo trace and a tiny baseline LTR
@@ -146,21 +181,29 @@ python3 /hy-tmp/scripts/cache_prefix_probe.py \
   --out /hy-tmp/results/cache-prefix-probe-sharegpt.json
 ```
 
-## How to Read the Result
+## How to Read My Result
 
-Important fields:
+My output JSON uses different fields from the serving benchmark JSON:
 
 - `requests_with_reused_prefix`: how many requests share a prefix with another
   request.
-- `cache_only`: whether the cache signal alone correlates with true output
-  length.
-- `base_ltr`: original LTR ranking quality.
-- `combined`: LTR score plus cache bonus.
-- `best_combined_by_sjf_quality`: best tested cache weight.
+- `cache_hit_rate`: fraction of requests whose prefix appears more than once.
+- `cache_only`: ranking diagnostic using only my cache bonus.
+- `base_ltr`: ranking diagnostic using only the original LTR score.
+- `combined`: ranking diagnostic after adding my cache bonus to LTR.
+- `best_combined_result`: best tested `prefix_words` and `cache_weight`
+  combination by this offline ranking metric.
+
+The two ranking fields are:
+
+- `rank_corr`: correlation between scheduling score rank and true output-length
+  rank.
+- `sjf_quality`: negative `rank_corr`, because a shortest-job-first style
+  scheduler is better when high priority is associated with shorter output.
 
 The signal is promising if:
 
-- the combined score improves over `base_ltr`, especially on OOD data, or
+- `combined` improves over `base_ltr`, especially on OOD data, or
 - it does not improve rank correlation but shows many reused-prefix opportunities,
   which means it may still be useful for TTFT/prefill latency in a real serving
   experiment.
