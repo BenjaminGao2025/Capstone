@@ -167,6 +167,7 @@ the earlier
 ## Project Documents
 
 - [vLLM-LTR reproduction milestone](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
+- [Cache-aware scheduling probe](docs/experiments/2026-06-17-cache-prefix-probe.md)
 - [Roadmap](docs/roadmap-v0.1.md)
 - [Related-work summaries](docs/related-work/)
 - [Presentation material](docs/presentation/)

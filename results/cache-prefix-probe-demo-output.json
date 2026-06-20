@@ -1,0 +1,80 @@
+{
+  "trace": "results/cache-prefix-probe-demo-trace.jsonl",
+  "result_json": "results/cache-prefix-probe-demo-ltr.json",
+  "num_requests": 8,
+  "score_source": "pred_scores",
+  "results": [
+    {
+      "prefix_words": 6,
+      "unique_prefixes": 3,
+      "reused_prefix_groups": 1,
+      "requests_with_reused_prefix": 6,
+      "cache_hit_rate": 0.75,
+      "max_group_size": 6,
+      "cache_only": {
+        "rank_corr": 0.42857142857142855,
+        "sjf_quality": -0.42857142857142855
+      },
+      "base_ltr": {
+        "rank_corr": -0.9761904761904762,
+        "sjf_quality": 0.9761904761904762
+      },
+      "combined": [
+        {
+          "cache_weight": 0.1,
+          "rank_corr": -0.9761904761904762,
+          "sjf_quality": 0.9761904761904762
+        },
+        {
+          "cache_weight": 0.5,
+          "rank_corr": -0.7857142857142857,
+          "sjf_quality": 0.7857142857142857
+        },
+        {
+          "cache_weight": 1.0,
+          "rank_corr": -0.40476190476190477,
+          "sjf_quality": 0.40476190476190477
+        }
+      ]
+    },
+    {
+      "prefix_words": 10,
+      "unique_prefixes": 4,
+      "reused_prefix_groups": 2,
+      "requests_with_reused_prefix": 6,
+      "cache_hit_rate": 0.75,
+      "max_group_size": 3,
+      "cache_only": {
+        "rank_corr": 0.42857142857142855,
+        "sjf_quality": -0.42857142857142855
+      },
+      "base_ltr": {
+        "rank_corr": -0.9761904761904762,
+        "sjf_quality": 0.9761904761904762
+      },
+      "combined": [
+        {
+          "cache_weight": 0.1,
+          "rank_corr": -0.9761904761904762,
+          "sjf_quality": 0.9761904761904762
+        },
+        {
+          "cache_weight": 0.5,
+          "rank_corr": -0.7857142857142857,
+          "sjf_quality": 0.7857142857142857
+        },
+        {
+          "cache_weight": 1.0,
+          "rank_corr": -0.40476190476190477,
+          "sjf_quality": 0.40476190476190477
+        }
+      ]
+    }
+  ],
+  "best_combined_result": {
+    "prefix_words": 6,
+    "cache_weight": 0.1,
+    "rank_corr": -0.9761904761904762,
+    "sjf_quality": 0.9761904761904762
+  }
+}
