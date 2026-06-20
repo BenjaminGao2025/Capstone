@@ -34,6 +34,8 @@ SETS = {
 
 
 def main():
+    if not torch.cuda.is_available():
+        torch.set_num_threads(1)
     ckpt = torch.load(HEAD, map_location="cpu")
     net = torch.nn.Sequential(
         torch.nn.Linear(ckpt["in_dim"], ckpt["hidden"]), torch.nn.ReLU(),
@@ -44,7 +46,7 @@ def main():
     tok = AutoTokenizer.from_pretrained(MODEL_DIR)
 
     for name, (npz_path, trace, out) in SETS.items():
-        feats = torch.tensor(np.load(npz_path)["last32"].astype(np.float32))
+        feats = torch.from_numpy(np.load(npz_path)["last32"].astype(np.float32))
         reqs = sample_requests(trace, 500, False, -1, -1, tok, "opt-xxx")
         prompts = [r[0] for r in reqs]
         assert len(prompts) == len(feats), (len(prompts), len(feats))

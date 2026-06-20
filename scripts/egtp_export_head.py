@@ -44,10 +44,12 @@ def fit(net, X, y, epochs=60, lr=1e-3):
 
 
 def main():
+    if DEV == "cpu":
+        torch.set_num_threads(1)
     train = load("lmsys_train")
     evals = {e: load(e) for e in EVALS}
-    Xtr = torch.tensor(train[VARIANT].astype(np.float32), device=DEV)
-    ytr = torch.tensor(np.log(train["lens"].astype(np.float32)), device=DEV)
+    Xtr = torch.from_numpy(train[VARIANT].astype(np.float32)).to(DEV)
+    ytr = torch.from_numpy(np.log(train["lens"].astype(np.float32))).to(DEV)
     mu, sd = Xtr.mean(0, keepdim=True), Xtr.std(0, keepdim=True) + 1e-6
     Xtr = (Xtr - mu) / sd
 
@@ -56,7 +58,7 @@ def main():
         net = fit(make_net(Xtr.shape[1], seed=seed), Xtr, ytr)
         taus = {}
         for e in EVALS:
-            Xe = (torch.tensor(evals[e][VARIANT].astype(np.float32), device=DEV) - mu) / sd
+            Xe = (torch.from_numpy(evals[e][VARIANT].astype(np.float32)).to(DEV) - mu) / sd
             with torch.no_grad():
                 pred = net(Xe).squeeze(-1).cpu().numpy()
             taus[e] = abs(float(scipy.stats.kendalltau(pred, evals[e]["lens"])[0]))

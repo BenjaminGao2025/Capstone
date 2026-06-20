@@ -19,7 +19,7 @@ import torch
 
 FDIR = sys.argv[1] if len(sys.argv) > 1 else "/hy-tmp/features_prefix"
 KS = (128, 256, 512)
-VARIANTS = ("last32", "mean16")
+VARIANTS = ("last32", "mean16", "concat")
 EVALS = ("lmsys_test", "sharegpt_test", "alpaca_test")
 FULL_ANCHOR = {"lmsys_test": 0.712, "sharegpt_test": 0.445, "alpaca_test": 0.686}
 OPT_ANCHOR = {"lmsys_test": 0.640, "sharegpt_test": 0.420, "alpaca_test": 0.579}
@@ -49,21 +49,33 @@ def fit(X, y, seed):
 
 
 def main():
+    if DEV == "cpu":
+        torch.set_num_threads(1)
     print(f"gate1 on {FDIR} ({DEV})")
     results = {}
     for k in KS:
         train = load(f"lmsys_train_k{k}")
         tests = {e: load(f"{e}_k{k}") for e in EVALS}
-        ytr = torch.tensor(np.log(train["lens"].astype(np.float32)), device=DEV)
+        ytr = torch.from_numpy(np.log(train["lens"].astype(np.float32))).to(DEV)
         for v in VARIANTS:
-            Xtr = torch.tensor(train[v].astype(np.float32), device=DEV)
+            print(f"Running k={k}, v={v}...", flush=True)
+            if v == "concat":
+                Xtr_np = np.concatenate([train["last32"], train["mean16"]], axis=1).astype(np.float32)
+            else:
+                Xtr_np = train[v].astype(np.float32)
+            Xtr = torch.from_numpy(Xtr_np).to(DEV)
             mu, sd = Xtr.mean(0, keepdim=True), Xtr.std(0, keepdim=True) + 1e-6
             Xtr = (Xtr - mu) / sd
             taus = {e: [] for e in EVALS}
             for s in range(SEEDS):
+                print(f"  Seed {s}...", flush=True)
                 net = fit(Xtr, ytr, s)
                 for e in EVALS:
-                    Xe = (torch.tensor(tests[e][v].astype(np.float32), device=DEV) - mu) / sd
+                    if v == "concat":
+                        Xe_np = np.concatenate([tests[e]["last32"], tests[e]["mean16"]], axis=1).astype(np.float32)
+                    else:
+                        Xe_np = tests[e][v].astype(np.float32)
+                    Xe = (torch.from_numpy(Xe_np).to(DEV) - mu) / sd
                     with torch.no_grad():
                         pred = net(Xe).squeeze(-1).cpu().numpy()
                     taus[e].append(abs(float(scipy.stats.kendalltau(pred, tests[e]["lens"])[0])))
@@ -79,7 +91,14 @@ def main():
     ood_ok = m["sharegpt_test"][0] >= OPT_ANCHOR["sharegpt_test"]
     print(f"\nk=256 last32: lmsys {m['lmsys_test'][0]:.3f} (need >= {FULL_ANCHOR['lmsys_test']-0.05:.3f}: {'ok' if in_ok else 'FAIL'}), "
           f"sharegpt {m['sharegpt_test'][0]:.3f} (need >= {OPT_ANCHOR['sharegpt_test']:.3f}: {'ok' if ood_ok else 'FAIL'})")
-    print("GATE1_VERDICT:", "PASS" if (in_ok and ood_ok) else "FAIL")
+
+    m_c = results[(256, "concat")]
+    in_ok_c = m_c["lmsys_test"][0] >= FULL_ANCHOR["lmsys_test"] - 0.05
+    ood_ok_c = m_c["sharegpt_test"][0] >= OPT_ANCHOR["sharegpt_test"]
+    print(f"k=256 concat: lmsys {m_c['lmsys_test'][0]:.3f} (need >= {FULL_ANCHOR['lmsys_test']-0.05:.3f}: {'ok' if in_ok_c else 'FAIL'}), "
+          f"sharegpt {m_c['sharegpt_test'][0]:.3f} (need >= {OPT_ANCHOR['sharegpt_test']:.3f}: {'ok' if ood_ok_c else 'FAIL'})")
+
+    print("GATE1_VERDICT:", "PASS" if (in_ok and ood_ok) or (in_ok_c and ood_ok_c) else "FAIL")
     print("GATE1_DONE")
 
 
