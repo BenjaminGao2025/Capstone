@@ -23,7 +23,7 @@ Example:
 
 ```powershell
 cd "G:\Documents\6806 Capstone\profiling"
-python .\run_vllm_profile.py --model meta-llama/Llama-3.1-8B-Instruct
+python .\run_vllm_profile.py --model meta-llama/Meta-Llama-3-8B-Instruct
 ```
 
 For a smaller local test model:
