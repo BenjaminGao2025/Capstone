@@ -219,6 +219,10 @@ added to test the same ideas under a trace-derived workload. This later probe
 shows latency-reduction potential, but it is reported separately from the early
 synthetic CSVs.
 
+**Probe warning:** the following trace-driven numbers still use a synthetic
+latency model. They are not real vLLM hardware measurements and should not be
+presented as a full reproduction of SLO-Aware Scheduling or Apt-Serve.
+
 Source: `slo_reproduction/related_bigmodel_results/summary.csv`
 
 SLO-Aware trace-driven result:

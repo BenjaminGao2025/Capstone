@@ -86,6 +86,10 @@ memory pressure affects batch composition and latency.
 trace-driven probe. It is kept as supplementary evidence because it uses a
 different trace-derived workload setting from the early synthetic CSVs.
 
+**Probe warning:** these trace-driven numbers still use a synthetic latency
+model. They are not real vLLM hardware measurements and should not be presented
+as a full reproduction of SLO-Aware Scheduling or Apt-Serve.
+
 The trace-driven result can be cited as latency-reduction potential, but it
 should not be described as a full reproduction of SLO-Aware Scheduling or
 Apt-Serve.
