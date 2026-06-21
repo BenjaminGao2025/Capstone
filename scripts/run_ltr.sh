@@ -13,7 +13,7 @@ NUM_PROMPTS="${NUM_PROMPTS:-50}"
 REQUEST_RATE="${REQUEST_RATE:-8}"
 OUTPUT_LEN="${OUTPUT_LEN:-128}"   # -1 = replay true trace output lengths
 SEED="${SEED:-0}"
-SWAP_SPACE="${SWAP_SPACE:-8}"     # cgroup RAM limit is 23GiB; do not raise blindly
+SWAP_SPACE="${SWAP_SPACE:-8}"     # cgroup RAM limit is 23GiB — do not raise blindly
 PORT="${PORT:-3343}"
 PREDICTOR="${PREDICTOR:-MODEL/results/opt-125m-llama3-8b-lmsys-score-trainbucket10-b32/usage_config.json}"
 RESULT_DIR=/hy-tmp/results
