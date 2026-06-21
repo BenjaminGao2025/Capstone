@@ -68,7 +68,7 @@ index 73d6a52..7c2c4fd 100644
      if eval_max_tpot:
          max_tpots = []
 diff --git a/vllm/core/scheduler.py b/vllm/core/scheduler.py
-index 1a56ad6..508021b 100644
+index 1a56ad6..8fc3057 100644
 --- a/vllm/core/scheduler.py
 +++ b/vllm/core/scheduler.py
 @@ -322,6 +322,13 @@ class Scheduler:
@@ -85,7 +85,7 @@ index 1a56ad6..508021b 100644
          elif self.schedule_type.startswith("opt"):
              self._schedule = self._general_schedule
              self._get_ordered_requests = self._get_opt_ordered_requests
-@@ -1002,6 +1009,62 @@ class Scheduler:
+@@ -1002,6 +1009,76 @@ class Scheduler:
      def _update_opt_priority(self):
          pass
  
@@ -115,6 +115,7 @@ index 1a56ad6..508021b 100644
 +
 +        # 2. Aging gate threshold (wall-clock seconds)
 +        aging_s = float(os.environ.get("AGING_GATE_S", "120"))
++        preempt_protect = int(os.environ.get("PREEMPT_PROTECT", "0"))
 +        now = time.time()
 +
 +        all_reqs = (list(self.waiting) + list(self.running)
@@ -127,12 +128,17 @@ index 1a56ad6..508021b 100644
 +            nonlocal n_aged
 +            is_waiting = id(req) in waiting_ids
 +            waited = now - req.metrics.arrival_time
++            
++            if preempt_protect and not is_waiting:
++                # Absolute highest priority: protect running/swapped from being preempted by any waiting request
++                return (-1, 0.0, -req.aux_model_score)
++                
 +            if is_waiting and waited >= aging_s:
 +                n_aged += 1
-+                # Tier 0: aged → FCFS by arrival time
++                # Tier 0: aged waiting → FCFS by arrival time
 +                return (0, req.metrics.arrival_time, 0.0)
 +            else:
-+                # Tier 1: normal LTR → highest aux_model_score first
++                # Tier 1: normal LTR (or running/swapped if protect=0) → highest aux_model_score first
 +                return (1, 0.0, -req.aux_model_score)
 +
 +        ret = list(sorted(all_reqs, key=_key))
@@ -140,6 +146,14 @@ index 1a56ad6..508021b 100644
 +        if n_aged > 0:
 +            logger.info("aging-gate: %d/%d waiting requests exceeded %.0fs threshold",
 +                        n_aged, len(self.waiting), aging_s)
++
++        if preempt_protect:
++            running_and_swapped = list(self.running) + list(self.swapped)
++            if running_and_swapped:
++                min_running_score = min(r.aux_model_score for r in running_and_swapped)
++                n_prevented = sum(1 for r in self.waiting if (now - r.metrics.arrival_time) < aging_s and r.aux_model_score > min_running_score)
++                if n_prevented > 0:
++                    logger.info("preempt-protect: prevented %d score-based preemptions", n_prevented)
 +
 +        return ret
 +
