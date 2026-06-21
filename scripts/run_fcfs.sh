@@ -1,7 +1,7 @@
 #!/bin/bash
-# FCFS baseline - vllm-ltr (commit 13bbf6ff), in-distribution LMSYS trace
+# FCFS baseline — vllm-ltr (commit 13bbf6ff), in-distribution LMSYS trace
 # Smoke defaults: facebook/opt-1.3b, 50 prompts, output-len 128
-# Llama run:  MODEL=meta-llama/Meta-Llama-3-8B-Instruct OUTPUT_LEN=-1 NUM_PROMPTS=500 ./run_fcfs.sh
+# Llama run:  MODEL=meta-llama/Llama-3.1-8B-Instruct OUTPUT_LEN=-1 NUM_PROMPTS=500 ./run_fcfs.sh
 set -e
 source /hy-tmp/env.sh
 
@@ -12,7 +12,7 @@ NUM_PROMPTS="${NUM_PROMPTS:-50}"
 REQUEST_RATE="${REQUEST_RATE:-8}"
 OUTPUT_LEN="${OUTPUT_LEN:-128}"   # -1 = replay true trace output lengths
 SEED="${SEED:-0}"
-SWAP_SPACE="${SWAP_SPACE:-8}"     # cgroup RAM limit is 23GiB; do not raise blindly
+SWAP_SPACE="${SWAP_SPACE:-8}"     # cgroup RAM limit is 23GiB — do not raise blindly
 PORT="${PORT:-3343}"
 RESULT_DIR=/hy-tmp/results
 SCHED=fcfs
