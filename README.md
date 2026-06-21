@@ -13,12 +13,11 @@ not a statistically meaningful performance claim.
 
 ```text
 .
-|-- scripts/                 # data, benchmark, sweep, and plotting helpers
-|-- results/                 # committed benchmark JSON files
-|-- figures/                 # generated plots
-|-- docs/                    # roadmap, papers, notes, and presentation material
-|-- report/                  # presentation artifacts
-`-- slo_reproduction/        # related-work simulation and trace-driven probes
+├── scripts/                 # data, benchmark, sweep, and plotting helpers
+├── results/                 # committed benchmark JSON files
+├── figures/                 # generated plots
+├── docs/                    # roadmap, papers, notes, and presentation material
+└── report/                  # presentation artifacts
 ```
 
 ## Reference Environment
