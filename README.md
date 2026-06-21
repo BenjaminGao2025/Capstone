@@ -238,6 +238,8 @@ Apt-Serve trace-driven result:
 | 4 | 2249 | 1370 | 39.1% |
 | 8 | 2279 | 985 | 56.8% |
 | 16 | 2295 | 750 | 67.3% |
+> **Simulation Probe Only (Not Real Hardware).**
+> These results are generated from synthetic latency models and trace-driven evaluation. They are exploratory probes and should not be interpreted as real vLLM reproduction results.
 
 ![SLO-Aware trace-driven latency](figures/slo_aware_trace_latency.png)
 
@@ -259,8 +261,8 @@ treated as a later system-level extension.
 ## Current Status
 
 The formal `Meta-Llama-3-8B-Instruct` reproduction is complete: the
-in-distribution rate sweep (2-32 req/s) reproduces the LTR advantage, and the
-out-of-distribution evidence is in hand: ranking quality drops, the
+in-distribution rate sweep (2–32 req/s) reproduces the LTR advantage (up to 8.1× mean TTFT), and the
+out-of-distribution evidence is in hand: ranking quality drops (tau 0.642 → 0.420), the
 tail-latency advantage inverts, and at rate 8 the mis-ranked LTR arm exhausts
 swap and crashes the engine. See the
 [formal run report](docs/experiments/2026-06-11-llama3-8b-formal-runs.md) and
