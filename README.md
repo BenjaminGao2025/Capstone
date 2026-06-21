@@ -170,7 +170,7 @@ These result sets are kept in the repository:
 - `slo_reproduction/related_bigmodel_results/summary.csv`: a later
   Llama-3-8B trace-driven probe.
 
-These two settings should not be mixed as one experiment.
+The synthetic and trace-driven settings should not be mixed as one experiment.
 
 ### SLO-Aware Scheduling
 
