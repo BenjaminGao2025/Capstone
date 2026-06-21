@@ -68,10 +68,10 @@ index 73d6a52..7c2c4fd 100644
      if eval_max_tpot:
          max_tpots = []
 diff --git a/vllm/core/scheduler.py b/vllm/core/scheduler.py
-index 1a56ad6..63b1cf5 100644
+index 1a56ad6..508021b 100644
 --- a/vllm/core/scheduler.py
 +++ b/vllm/core/scheduler.py
-@@ -322,11 +322,25 @@ class Scheduler:
+@@ -322,6 +322,13 @@ class Scheduler:
              self._get_ordered_requests = self._get_tpt_ordered_requests
              self._update_priority = self._update_tpt_priority
              self.need_score = True
@@ -85,19 +85,7 @@ index 1a56ad6..63b1cf5 100644
          elif self.schedule_type.startswith("opt"):
              self._schedule = self._general_schedule
              self._get_ordered_requests = self._get_opt_ordered_requests
-             self._update_priority = self._update_opt_priority
-             self.need_score = True
-+        elif self.schedule_type.startswith("ipt"):
-+            # internal-predictor mode: scores come from the worker at prefill
-+            # completion (main-model hidden state + tiny head), no aux engine
-+            self._schedule = self._general_schedule
-+            self._get_ordered_requests = self._get_ipt_ordered_requests
-+            self._update_priority = self._update_opt_priority
-+            self.need_score = False
-         else:
-             assert False, f"Not Supported Schedule Type {self.schedule_type}"
- 
-@@ -1002,6 +1016,85 @@ class Scheduler:
+@@ -1002,6 +1009,62 @@ class Scheduler:
      def _update_opt_priority(self):
          pass
  
@@ -133,11 +121,13 @@ index 1a56ad6..63b1cf5 100644
 +                    + list(self.swapped))
 +
 +        n_aged = 0
++        waiting_ids = set(id(r) for r in self.waiting)
 +
 +        def _key(req):
 +            nonlocal n_aged
++            is_waiting = id(req) in waiting_ids
 +            waited = now - req.metrics.arrival_time
-+            if waited >= aging_s:
++            if is_waiting and waited >= aging_s:
 +                n_aged += 1
 +                # Tier 0: aged → FCFS by arrival time
 +                return (0, req.metrics.arrival_time, 0.0)
@@ -148,162 +138,13 @@ index 1a56ad6..63b1cf5 100644
 +        ret = list(sorted(all_reqs, key=_key))
 +
 +        if n_aged > 0:
-+            logger.info("aging-gate: %d/%d requests exceeded %.0fs threshold",
-+                        n_aged, len(all_reqs), aging_s)
++            logger.info("aging-gate: %d/%d waiting requests exceeded %.0fs threshold",
++                        n_aged, len(self.waiting), aging_s)
 +
 +        return ret
 +
-+    def _get_ipt_ordered_requests(self):
-+        # v2 policy. v1 ("unscored first") let every new arrival preempt
-+        # running work; on long-sequence traces (ShareGPT) the resulting
-+        # preemption churn exhausted the CPU swap pool and killed the engine.
-+        # v2 tiers:
-+        #   0  starvation valve: unscored waiting > IPT_STARVE_S (default 30s)
-+        #   1  RUNNING scored, shortest-predicted-first  (never preempted by
-+        #      new arrivals -> bounded churn)
-+        #   2  unscored, FCFS: admitted only into leftover budget
-+        #   3  scored but not running (swapped/preempted), by score
-+        starve_s = float(os.environ.get("IPT_STARVE_S", "30"))
-+        now = time.time()
-+        running_ids = set(id(r) for r in self.running)
 +
-+        def _key(req):
-+            scored = req.aux_model_score is not None
-+            if not scored and now - req.metrics.arrival_time > starve_s:
-+                return (0, req.metrics.arrival_time, 0.0)
-+            if scored and id(req) in running_ids:
-+                return (1, 0.0, -req.aux_model_score)
-+            if not scored:
-+                return (2, req.metrics.arrival_time, 0.0)
-+            return (3, 0.0, -req.aux_model_score)
-+        return list(sorted(
-+            list(self.waiting) + list(self.running) + list(self.swapped),
-+            key=_key))
 +
      def _get_ropt_ordered_requests(self):
  
          need_aux_scores = []
-diff --git a/vllm/engine/llm_engine.py b/vllm/engine/llm_engine.py
-index 831582c..0ba9cff 100644
---- a/vllm/engine/llm_engine.py
-+++ b/vllm/engine/llm_engine.py
-@@ -239,7 +239,33 @@ class LLMEngine:
-                 llm_model_executor=self.model_executor,
-             )
-         else:
--            self.scheduler.aux_model = None
-+            import os as _os
-+            _score_file = _os.environ.get("IPT_SCORE_FILE", "")
-+            if _score_file:
-+                # head-vs-policy ablation: ORIGINAL opt scheduling (same
-+                # pre-prefill timing and sorting), scores precomputed by our
-+                # head and looked up by prompt instead of running an AUXLLM.
-+                import json as _json
-+
-+                class _FileAuxScorer:
-+                    def __init__(self, path):
-+                        with open(path) as f:
-+                            self._table = _json.load(f)
-+                        self._miss = 0
-+
-+                    def obtain_aux_scores(self, reqs):
-+                        for r in reqs:
-+                            s = self._table.get(r.prompt)
-+                            if s is None:
-+                                self._miss += 1
-+                                s = 0.0
-+                                print(f"FileAuxScorer MISS #{self._miss}: {r.prompt[:60]!r}")
-+                            r.set_aux_model_score(s)
-+
-+                self.scheduler.aux_model = _FileAuxScorer(_score_file)
-+                print(f"FileAuxScorer loaded: {_score_file}")
-+            else:
-+                self.scheduler.aux_model = None
- 
-     def _initialize_kv_caches(self) -> None:
-         """Initialize the KV cache in the worker(s).
-@@ -490,8 +516,12 @@ class LLMEngine:
-             seq_group = scheduled_seq_group.seq_group
-             
-             assert len(outputs) == 1
--            if outputs[0].pred_score is not None: 
-+            if outputs[0].pred_score is not None:
-                 seq_group.set_pred_score(outputs[0].pred_score)
-+            # IPT: first score (= prefill-completion hidden state) sticks
-+            if (outputs[0].aux_model_score is not None
-+                    and seq_group.aux_model_score is None):
-+                seq_group.set_aux_model_score(float(outputs[0].aux_model_score))
- 
-             seq_group.update_num_computed_tokens(
-                 scheduled_seq_group.token_chunk_size)
-diff --git a/vllm/model_executor/models/llama.py b/vllm/model_executor/models/llama.py
-index c642c1a..db6ef79 100644
---- a/vllm/model_executor/models/llama.py
-+++ b/vllm/model_executor/models/llama.py
-@@ -380,9 +380,11 @@ class LlamaForCausalLM(nn.Module):
-         self,
-         logits: torch.Tensor,
-         sampling_metadata: SamplingMetadata,
--        pred_scores
-+        pred_scores,
-+        aux_model_scores=None,
-     ) -> Optional[SamplerOutput]:
--        next_tokens = self.sampler(logits, sampling_metadata, pred_scores =pred_scores )
-+        next_tokens = self.sampler(logits, sampling_metadata, pred_scores=pred_scores,
-+                                   aux_model_scores=aux_model_scores)
-         return next_tokens
- 
-     def load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
-diff --git a/vllm/worker/model_runner.py b/vllm/worker/model_runner.py
-index e1691d1..47caab0 100644
---- a/vllm/worker/model_runner.py
-+++ b/vllm/worker/model_runner.py
-@@ -1,4 +1,5 @@
- import contextlib
-+import os
- import time
- from enum import IntEnum
- from typing import Dict, List, NamedTuple, Optional, Set, Tuple
-@@ -867,12 +868,40 @@ class ModelRunner:
-         # Only perform sampling in the driver worker.
-         if not sampling_metadata.perform_sampling:
-             return None
--        #print('before sample')
-+        # IPT: score sampled rows with the internal head (lazy-loaded once).
-+        # The first score a request receives lands at prefill completion —
-+        # the last-prompt-token hidden state (= stage-2 "last32" feature).
-+        if not hasattr(self, "_ipt_head"):
-+            ipt_path = os.environ.get("IPT_HEAD_PATH", "")
-+            if ipt_path:
-+                ckpt = torch.load(ipt_path, map_location="cpu")
-+                net = torch.nn.Sequential(
-+                    torch.nn.Linear(ckpt["in_dim"], ckpt["hidden"]),
-+                    torch.nn.ReLU(),
-+                    torch.nn.Linear(ckpt["hidden"], 1))
-+                net.load_state_dict(ckpt["state_dict"])
-+                self._ipt_head = net.to(self.device).float().eval()
-+                self._ipt_mu = ckpt["mu"].to(self.device).float()
-+                self._ipt_sd = ckpt["sd"].to(self.device).float()
-+                logger.info(f"IPT head loaded from {ipt_path}")
-+            else:
-+                self._ipt_head = None
-+        ipt_scores = None
-+        if self._ipt_head is not None:
-+            with torch.no_grad():
-+                h = hidden_states.index_select(
-+                    0, sampling_metadata.selected_token_indices).float()
-+                h = (h - self._ipt_mu) / self._ipt_sd
-+                # head predicts log-length; scheduler runs HIGH score first
-+                ipt_scores = (-self._ipt_head(h).squeeze(-1)).cpu().tolist()
-         # Sample the next token.
-+        sample_kwargs = {"pred_scores": pred_scores}
-+        if ipt_scores is not None:
-+            sample_kwargs["aux_model_scores"] = ipt_scores
-         output = self.model.sample(
-             logits=logits,
-             sampling_metadata=sampling_metadata,
--            pred_scores=pred_scores
-+            **sample_kwargs
-         )
-         return output
- 
