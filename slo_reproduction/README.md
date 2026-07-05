@@ -1,5 +1,9 @@
 # SLO-Aware and Apt-Serve Scheduling Probes
 
+**Scope warning:** this folder is Shun Huang's related-work probe only. It is
+not a replacement for the team's shared base-paper reproduction, and it should
+not be used to rewrite the repository-level LTR/FCFS headline results.
+
 This folder contains paper-inspired probes for two related scheduling papers:
 
 - `SLO-Aware Scheduling for Large Language Model Inferences`
@@ -8,6 +12,19 @@ This folder contains paper-inspired probes for two related scheduling papers:
 These scripts are not full vLLM implementations of the original systems. They
 are simulation-level and trace-driven checks used to decide which scheduling
 signals are useful to combine with the base LTR scheduler.
+
+## What These Results Support
+
+The safe conclusion is: SLO-aware priority and Apt-Serve-style cache/batch
+awareness are useful candidate signals for improving the base LTR scheduler,
+but the evidence here is probe-level evidence, not full hardware reproduction.
+
+| Evidence | Safe claim | Do not claim |
+|----------|------------|--------------|
+| `outputs/` | Early SLO-aware priority improves SLO attainment under several loads | SLO-aware always reduces latency |
+| `outputs_sa/` | Simulated-annealing SLO-aware priority improves SLO attainment and modestly lowers mean latency in this synthetic model | Full reproduction of the SLO-aware paper |
+| `outputs_aptserve/` | Adaptive hybrid cache scheduling improves SLO attainment and mean latency in this synthetic model, with high variance at the heaviest load | Full reproduction of Apt-Serve runtime/cache implementation |
+| `related_bigmodel_results/` | Llama-3-8B trace-derived probe shows latency-reduction potential under a separate synthetic latency model | Real vLLM serving results for SLO-Aware or Apt-Serve |
 
 ## Result Sets
 
@@ -90,6 +107,23 @@ different trace-derived workload setting from the early synthetic CSVs.
 model. They are not real vLLM hardware measurements and should not be presented
 as a full reproduction of SLO-Aware Scheduling or Apt-Serve.
 
-The trace-driven result can be cited as latency-reduction potential, but it
-should not be described as a full reproduction of SLO-Aware Scheduling or
-Apt-Serve.
+The trace-driven result can be cited as latency-reduction potential. In this
+probe, the SLO-aware policy lowers the modeled average latency by 28.7% to
+62.9% over rates 2 to 16, while the Apt-Serve-style adaptive hybrid policy
+lowers modeled average latency by 20.5% to 67.3% over the same rates. These
+numbers should always be labeled as trace-driven simulation results.
+
+![Trace-driven SLO-aware latency probe](figures/slo_aware_trace_latency.png)
+
+![Trace-driven Apt-Serve latency probe](figures/aptserve_trace_latency.png)
+
+## Presentation Wording
+
+Suggested wording for slides or summary:
+
+> My related-work experiment does not implement the full SLO-Aware or Apt-Serve
+> systems inside vLLM. Instead, I use synthetic and Llama-3-8B trace-derived
+> probes to test whether their scheduling signals are useful. The main result is
+> that SLO urgency and cache/batch awareness are promising add-on signals for
+> the base LTR scheduler, but they should be evaluated later in a real scheduler
+> implementation.

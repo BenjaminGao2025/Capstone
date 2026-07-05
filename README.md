@@ -153,121 +153,13 @@ is expected: the predictor was trained to rank Llama-3-8B output lengths, but
 its ranking on `facebook/opt-1.3b` is effectively noise (Kendall's Tau about
 -0.09), so LTR behaves approximately like random scheduling in this smoke test.
 
-## Related-Work Scheduling Probes
-
-This part evaluates two related scheduling directions from the literature:
-SLO-aware request priority and Apt-Serve-style cache/batch awareness. These are
-simulation-level and trace-driven probes, not full vLLM implementations of the
-original systems. The goal is to test whether their scheduling signals are worth
-combining with the base LTR scheduler.
-
-These result sets are kept in the repository:
-
-- `slo_reproduction/outputs/`: early synthetic SLO-aware simulation.
-- `slo_reproduction/outputs_sa/`: simulated-annealing SLO-aware simulation.
-- `slo_reproduction/outputs_aptserve/`: synthetic Apt-Serve-style simulation.
-- `slo_reproduction/related_bigmodel_results/summary.csv`: a later
-  Llama-3-8B trace-driven probe.
-
-The synthetic and trace-driven settings should not be mixed as one experiment.
-
-### SLO-Aware Scheduling
-
-`SLO-Aware Scheduling for Large Language Model Inferences` adds
-application-level latency objectives, such as TTFT, TPOT, and end-to-end SLOs,
-to request priority. In the early synthetic simulation, the clearest effect is
-better SLO attainment, not consistently lower average latency.
-
-Source: `slo_reproduction/outputs/results.csv`
-
-| Rate | FCFS SLO | SLO-aware SLO | FCFS avg latency | SLO-aware avg latency |
-|-----:|---------:|--------------:|-----------------:|----------------------:|
-| 0.40 | 0.379 | 0.604 | 6.64 | 7.02 |
-| 0.46 | 0.229 | 0.538 | 12.29 | 12.11 |
-| 0.52 | 0.308 | 0.604 | 8.90 | 9.40 |
-
-This supports the paper's idea that SLO urgency can be used as an additional
-priority signal, but this synthetic probe does not prove stable average-latency
-reduction under high load.
-
-### Apt-Serve
-
-`Apt-Serve: Adaptive Request Scheduling on Hybrid Cache for Scalable LLM
-Inference Serving` adds system-level awareness, especially batch composition
-and cache pressure. In the synthetic Apt-Serve-style probe, adaptive hybrid
-scheduling improves average latency in the mean, but the high-load setting has
-large variance across seeds.
-
-Source: `slo_reproduction/outputs_aptserve/results_summary.csv`
-
-| Rate | FCFS-KV avg latency | Adaptive-Hybrid avg latency | Note |
-|-----:|--------------------:|----------------------------:|------|
-| 0.38 | 6.24 | 5.50 | lower mean latency |
-| 0.46 | 7.77 | 6.31 | lower mean latency |
-| 0.54 | 8.59 | 6.77 | lower mean latency |
-| 0.62 | 17.94 | 9.51 | lower mean, high variance |
-
-This supports cache/batch awareness as a useful system-level direction, but a
-faithful Apt-Serve implementation would require deeper runtime changes than a
-pure ranking-score extension.
-
-### Supplementary Llama-3-8B Trace Probe
-
-After the initial synthetic simulations, a Llama-3-8B trace-driven probe was
-added to test the same ideas under a trace-derived workload. This later probe
-shows latency-reduction potential, but it is reported separately from the early
-synthetic CSVs.
-
-**Probe warning:** the following trace-driven numbers still use a synthetic
-latency model. They are not real vLLM hardware measurements and should not be
-presented as a full reproduction of SLO-Aware Scheduling or Apt-Serve.
-
-Source: `slo_reproduction/related_bigmodel_results/summary.csv`
-
-SLO-Aware trace-driven result:
-
-| Rate | FCFS avg latency | SLO-aware avg latency | Reduction |
-|-----:|-----------------:|----------------------:|----------:|
-| 2 | 3452 | 2461 | 28.7% |
-| 4 | 3509 | 1943 | 44.6% |
-| 8 | 3538 | 1519 | 57.1% |
-| 16 | 3552 | 1318 | 62.9% |
-
-Apt-Serve trace-driven result:
-
-| Rate | FCFS-KV avg latency | Adaptive-Hybrid avg latency | Reduction |
-|-----:|--------------------:|----------------------------:|----------:|
-| 2 | 2187 | 1738 | 20.5% |
-| 4 | 2249 | 1370 | 39.1% |
-| 8 | 2279 | 985 | 56.8% |
-| 16 | 2295 | 750 | 67.3% |
-> **Simulation Probe Only (Not Real Hardware).**
-> These results are generated from synthetic latency models and trace-driven evaluation. They are exploratory probes and should not be interpreted as real vLLM reproduction results.
-
-![SLO-Aware trace-driven latency](figures/slo_aware_trace_latency.png)
-
-![Apt-Serve trace-driven latency](figures/aptserve_trace_latency.png)
-
-### Takeaway
-
-The base paper's LTR scheduler remains the core method. For the next project
-step, SLO-aware priority is the easiest related-work direction to combine with
-LTR because it can be introduced as an additional ranking signal:
-
-```text
-final_score = LTR_score + alpha * SLO_urgency + beta * system_or_cache_signal
-```
-
-Apt-Serve-style cache and batch awareness is also useful, but it is better
-treated as a later system-level extension.
-
 ## Current Status
 
 The formal `Meta-Llama-3-8B-Instruct` reproduction is complete: the
-in-distribution rate sweep (2–32 req/s) reproduces the LTR advantage (up to 8.1× mean TTFT), and the
-out-of-distribution evidence is in hand: ranking quality drops (tau 0.642 → 0.420), the
-tail-latency advantage inverts, and at rate 8 the mis-ranked LTR arm exhausts
-swap and crashes the engine. See the
+in-distribution rate sweep (2–32 req/s) reproduces the LTR advantage (up to
+8.1× mean TTFT), and the out-of-distribution evidence is in hand — ranking
+quality drops (tau -0.642 → -0.420), the tail-latency advantage inverts, and
+at rate 8 the mis-ranked LTR arm exhausts swap and crashes the engine. See the
 [formal run report](docs/experiments/2026-06-11-llama3-8b-formal-runs.md) and
 the earlier
 [reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md).
