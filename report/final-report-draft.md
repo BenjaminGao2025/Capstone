@@ -64,7 +64,10 @@ Four-arm policy comparison (lmsys rate 8, mean TTFT):
 | FCFS | 16.36 s |
 | LTR OPT (paper predictor) | 2.03 s |
 | Paper strategy + internal head | 1.84 s |
-| V1: LTR + AgingGate + PreemptProtect | 1.70 s |
+| V1: LTR + AgingGate + PreemptProtect | 1.70 s* |
+
+* 1.70 s pending re-run verification (no committed JSON as of 2026-07-08); scheduled with multi-seed validation run.
+
 - [ ] verify these four numbers against committed JSONs before submission (Paths: FCFS=results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-104351.json, LTR OPT=results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104730.json, Ablation=results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260613-021954-ablation-ourshead.json, V1=TODO: waiting for final V1 LMSYS rerun)
 - [ ] Gate-threshold ablation: 30/60/120 s (Phase B/C of validation doc)
 - [ ] Protection on/off ablation (Phase A vs C — the crash/no-crash contrast)
