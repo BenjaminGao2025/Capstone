@@ -1,7 +1,5 @@
 model,prompt_length,max_success_batch_size,first_failed_batch_size,last_success_latency_sec,error
-meta-llama/Meta-Llama-3-8B-Instruct,128,64,,0.679,
-meta-llama/Meta-Llama-3-8B-Instruct,256,64,,0.706,
-meta-llama/Meta-Llama-3-8B-Instruct,512,64,,0.756,
-meta-llama/Meta-Llama-3-8B-Instruct,1024,64,,0.855,
-meta-llama/Meta-Llama-3-8B-Instruct,2048,64,,1.075,
-meta-llama/Meta-Llama-3-8B-Instruct,4096,64,,1.475,
+meta-llama/Meta-Llama-3-8B-Instruct,512,2048,,101.314,
+meta-llama/Meta-Llama-3-8B-Instruct,1024,2048,,130.833,
+meta-llama/Meta-Llama-3-8B-Instruct,2048,1024,2048,82.479,"HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=150)"
+meta-llama/Meta-Llama-3-8B-Instruct,4096,1024,2048,130.086,"HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=150)"
