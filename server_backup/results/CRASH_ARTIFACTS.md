@@ -8,4 +8,11 @@ The following JSON artifacts recorded ~0s latencies because the engine crashed a
   - `vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-105324.json`: [CRASH-ARTIFACT 190/500]
   - `vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-111404.json`: [CRASH-ARTIFACT 130/500]
   - `vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-112004.json`: [CRASH-ARTIFACT 83/500]
+  - `vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-111753.json`: [CRASH-ARTIFACT] (Missing from original list)
   - `vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-112243.json`: [CRASH-ARTIFACT 183/500]
+
+- Unmapped JSONs (no log coverage, do not aggregate):
+  - `vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-101509.json`: [UNMAPPED — no log coverage, do not aggregate]
+  - `vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-102151.json`: [UNMAPPED — no log coverage, do not aggregate]
+  - `vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-102552.json`: [CRASH-ARTIFACT 217/500]
+  - `vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-102723.json`: [CRASH-ARTIFACT 213/500]
