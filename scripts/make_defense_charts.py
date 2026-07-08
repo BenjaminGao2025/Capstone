@@ -48,7 +48,9 @@ def indist(rate, arm):
 
 
 def ood(rate, arm):
-    return load(f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")
+    paths = [p for p in glob.glob(os.path.join(RES, f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")) if "ablation" not in p]
+    assert len(paths) == 1, f"ood({rate}, {arm}) -> {paths}"
+    return load(os.path.basename(paths[0]))
 
 
 def fig_motivation(ind4f, ind4l, ood4f, ood4l):
@@ -133,6 +135,58 @@ def fig_cdf(f, l, title, fname):
     print(f"saved {OUT}/{fname}")
 
 
+def fig_ood_mitigation():
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
+    arms = ["FCFS", "LTR", "LTR+aging60\n+protect"]
+    means = [49.6, 24.3, 37.1]
+    p99s = [110.4, 156.2, 98.0]
+    colors = [C_FCFS, C_LTR, "#1976D2"]
+
+    ax = axes[0]
+    bars = ax.bar(arms, means, color=colors, width=0.55)
+    for b, v in zip(bars, means):
+        ax.text(b.get_x() + b.get_width() / 2, v + 1, f"{v}s",
+                ha="center", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Mean TTFT (s)")
+    ax.set_ylim(0, max(means) * 1.2)
+    ax.set_title("OOD Mean TTFT (lower is better)")
+    ax.grid(axis="y", alpha=0.3)
+
+    ax = axes[1]
+    bars = ax.bar(arms, p99s, color=colors, width=0.55)
+    for b, v in zip(bars, p99s):
+        ax.text(b.get_x() + b.get_width() / 2, v + 2, f"{v}s",
+                ha="center", fontsize=11, fontweight="bold")
+    ax.set_ylabel("P99 TTFT (s)")
+    ax.set_ylim(0, max(p99s) * 1.2)
+    ax.set_title("OOD P99 TTFT (lower is better)")
+    ax.grid(axis="y", alpha=0.3)
+
+    fig.suptitle("Combinatorial Strategy (aging+protect): Mean and P99 both outperform FCFS", fontsize=13, fontweight="bold")
+    fig.tight_layout(rect=[0, 0.03, 1, 1])
+    fig.savefig(f"{OUT}/fig_ood_mitigation.png", dpi=180)
+    print(f"saved {OUT}/fig_ood_mitigation.png")
+
+
+def fig_ood_survival():
+    fig, ax = plt.subplots(figsize=(7, 4.6))
+    arms = ["FCFS", "LTR", "LTR+aging\n(120s)", "LTR+aging\n+protect"]
+    completed = [500, 15, 15, 500]
+    colors = [C_FCFS, C_LTR, "#F9A825", "#1976D2"]
+    
+    bars = ax.bar(arms, completed, color=colors, width=0.55)
+    for b, v in zip(bars, completed):
+        ax.text(b.get_x() + b.get_width() / 2, v + 10, f"{v}/500",
+                ha="center", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Successful Requests")
+    ax.set_ylim(0, 550)
+    ax.set_title("Preemption protection is the critical component for survival", fontsize=13, fontweight="bold")
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(f"{OUT}/fig_ood_survival.png", dpi=180)
+    print(f"saved {OUT}/fig_ood_survival.png")
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     sweep = {r: {"fcfs": indist(r, "fcfs"), "ltr": indist(r, "opt-xxx")} for r in RATES}
@@ -149,6 +203,8 @@ def main():
             "Latency CDF — in-distribution (LMSYS, rate 8)", "fig_cdf_indist_r8.png")
     fig_cdf(ood4f, ood4l,
             "Latency CDF — OOD (ShareGPT trace × LMSYS predictor, rate 4)", "fig_cdf_ood_r4.png")
+    fig_ood_mitigation()
+    fig_ood_survival()
     print("ALL_CHARTS_DONE")
 
 

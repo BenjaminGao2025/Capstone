@@ -27,7 +27,9 @@ not a statistically meaningful performance claim.
 ├── results/                 # committed benchmark JSON files
 ├── figures/                 # generated plots
 ├── docs/                    # roadmap, papers, notes, and presentation material
-└── report/                  # presentation artifacts
+├── report/                  # presentation artifacts
+├── server_backup/           # GPU-server backup: 2026-06-21 aging-gate validation runs + logs
+└── slo_reproduction/        # related-work probes: SLO-aware & Apt-Serve (simulation-level)
 ```
 
 ## Reference Environment
@@ -205,9 +207,11 @@ Peak in-distribution gain: **8.1× mean TTFT** at rate 8.
 > operating point it incurs a **1.53× p99 tail regression**, and at rate 8 the
 > engine **crashes**. The only configuration that is actually deployable — no
 > p99 regression and no crash — is the waiting-time aging gate, whose mean-TTFT
-> gain shrinks to roughly **~1.1×** (≈0.94× mean latency); that mitigation
-> result is currently **simulation only and still needs real-vLLM validation on
-> the RTX 3090**. We do **not** claim "8× everywhere," and we do **not** claim a
+> gain shrinks to roughly **~1.2–1.3×** over FCFS. That mitigation has now been
+> **validated on the RTX 3090** (2026-06-21, single seed): aging gate +
+> preemption protection completes 500/500 at OOD rate 8 where raw LTR crashes,
+> and at rate 4 beats FCFS on both mean and p99 TTFT (37.1 s / 98.0 s vs
+> 49.6 s / 110.4 s). We do **not** claim "8× everywhere," and we do **not** claim a
 > free ~1.7× deployable gain.
 
 ### Diagnostic Figure
@@ -241,6 +245,35 @@ future work.
 
 ![Aging gate simulation](figures/confidence_gate_sim.png)
 
+### Mitigation: Real-GPU Validation (2026-06-21)
+
+The simulation prediction was validated on the RTX 3090 with the OOD ShareGPT
+trace (seed 0, n=500, `SWAP_SPACE=4` — the original crash configuration):
+
+| Rate | Arm | Completed | Mean TTFT | P99 TTFT |
+|---:|:---|---:|---:|---:|
+| 4 | FCFS | 500/500 | 49.6 s | 110.4 s |
+| 4 | LTR | 500/500 | 24.3 s | 156.2 s |
+| 4 | LTR+aging(120 s), no protect | 500/500 | 27.4 s | 120.3 s |
+| 4 | **LTR+aging(60 s)+protect** | 500/500 | **37.1 s** | **98.0 s** |
+| 8 | FCFS | 500/500 | 69.3 s | 158.9 s |
+| 8 | LTR | **crash (15/500)** | — | — |
+| 8 | LTR+aging(120 s), no protect | **crash (15/500)** | — | — |
+| 8 | **LTR+aging(60 s)+protect** | 500/500 | **61.0 s** | **147.9 s** |
+
+Two hardware-measured conclusions:
+
+1. **Preemption protection (running requests pinned to priority tier −1) is
+   the load-bearing component for survival** — the aging gate alone still
+   crashes at rate 8.
+2. At rate 4 the combined policy is **Pareto-better than FCFS on the OOD
+   trace** (lower mean *and* lower p99), matching the simulation's W=8
+   prediction. The deployable mean gain is ~1.2–1.3×, not raw LTR's 1.7×.
+
+Single seed; multi-seed repetition is future work. Full write-up:
+[aging-gate GPU validation report](docs/experiments/2026-06-21-aging-gate-validation.md).
+Raw JSONs and logs: `server_backup/results/`.
+
 ## Current Status
 
 The formal `Meta-Llama-3-8B-Instruct` reproduction is complete: the
@@ -251,6 +284,10 @@ at rate 8 the mis-ranked LTR arm exhausts swap and crashes the engine. See the
 [formal run report](docs/experiments/2026-06-11-llama3-8b-formal-runs.md) and
 the earlier
 [reproduction milestone report](docs/experiments/2026-06-10-vllm-ltr-reproduction.md).
+The aging-gate mitigation has been validated on hardware: with preemption
+protection enabled, all OOD runs complete at rates 4 and 8, and the rate-4
+configuration beats FCFS on both mean and p99 TTFT
+([validation report](docs/experiments/2026-06-21-aging-gate-validation.md)).
 
 ## Cache-Aware Prefix Analysis
 
@@ -287,6 +324,7 @@ Details and reproduction commands are in the
 ## Project Documents
 
 - [vLLM-LTR reproduction milestone](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
+- [Aging-gate GPU validation (2026-06-21)](docs/experiments/2026-06-21-aging-gate-validation.md)
 - [Smoke test report](docs/smoke-test-report.md)
 - [Roadmap](docs/roadmap-v0.1.md)
 - [Related-work summaries](docs/related-work/)

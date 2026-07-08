@@ -208,3 +208,29 @@ If you're stuck for more than ~1 day, ping someone. Silently stuck is the worst 
 Questions? Comment on the relevant issue, or DM Ben.
 
 — Last updated 2026-05-22
+
+---
+
+## Contribution Map (Current as of 2026-07-08)
+
+Per the course syllabus, every group member's contribution must be visible in the repository.
+
+- **BenjaminGao (Ben)**: Project Lead / Integration / Artifacts
+  - Commits: 40
+  - Key PRs/Issues: Role Claim #26, PR #22 (OOD diagnostic figure, aging-gate mitigation)
+
+- **yusun.12777 / Yuh-Jen Sun (yusun1218)**: Research / Writing
+  - Commits: 28
+  - Key PRs/Issues: Role Claim #4, PR #7 (Hydragen summary), PR #13 (cache-aware prefix probe), PR #24 (cache-prefix probe figure update)
+
+- **Chen02200059 (Chenxi Li)**: Infra / Integration
+  - Commits: 2
+  - Key PRs/Issues: Role Claim #1, PR #8 (SGLang summary), PR #25 (smoke test report)
+
+- **Mengze Hu (mengzehu / Mengze-Hu)**: Eval / Data
+  - Commits: 4
+  - Key PRs/Issues: Role Claim #2, PR #21 (benchmark figures and JSONL results)
+
+- **kayalo (Shun Huang)**: Systems / Engine
+  - Commits: 2
+  - Key PRs/Issues: Role Claim #3, PR #9 (vLLM summary), PR #14 (SLO-Aware and Apt-Serve reproduction probes)
