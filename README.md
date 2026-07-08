@@ -199,6 +199,7 @@ Details and reproduction commands are in the
 ## Project Documents
 
 - [vLLM-LTR reproduction milestone](docs/experiments/2026-06-10-vllm-ltr-reproduction.md)
+- [Smoke test report](docs/smoke-test-report.md)
 - [Roadmap](docs/roadmap-v0.1.md)
 - [Related-work summaries](docs/related-work/)
 - [Presentation material](docs/presentation/)
