@@ -189,13 +189,13 @@ Peak in-distribution gain: **8.1× mean TTFT** at rate 8.
 | Kendall tau | N/A | −0.420 (vs −0.642 in-dist) | **−34% ranking quality** |
 | Mean TTFT (rate 4) | 40,892 ms | 23,810 ms | LTR 1.72× better mean TTFT ✓ |
 | p99 latency (rate 4) | 151 s | 231 s | **LTR 1.53× worse p99** ✗ |
-| Rate-8 stability | 500/500 complete | engine crash | **LTR crashes** ✗ |
+| Rate-8 stability | 500/500 complete | engine crash (seed 0) | **LTR crashes or tail-collapses** ✗ |
 
 ### OOD Breakdown Summary ("三连崩")
 
 1. **Ranking quality collapses**: Kendall tau drops from −0.642 to −0.420 (−34%).
 2. **Tail-latency inversion**: p99 worsens from 151 s (FCFS) to 231 s (LTR) — 53% worse.
-3. **Engine crash at rate 8**: mis-ranked preemption storm exhausts CPU swap.
+3. **Seed-sensitive failure at rate 8**: mis-ranked preemption storm exhausts CPU swap and deterministically crashes the engine on seed 0 (while causing severe tail-latency collapse on surviving seeds).
 
 ### Honest Contribution Statement
 
@@ -211,7 +211,7 @@ Peak in-distribution gain: **8.1× mean TTFT** at rate 8.
 > **validated on the RTX 3090** (2026-06-21, single seed): aging gate +
 > preemption protection completes 500/500 at OOD rate 8 where raw LTR crashes,
 > and at rate 4 beats FCFS on both mean and p99 TTFT (37.1 s / 98.0 s vs
-> 49.6 s / 110.4 s). We do **not** claim "8× everywhere," and we do **not** claim a
+> 49.6 s / 110.4 s). However, this safety comes at a cost: **on the in-distribution trace, the mean TTFT advantage drops from LTR's 2.03s to 13.07s** (compared to FCFS's 16.36s) — a tradeoff of in-distribution speed for out-of-distribution stability. We do **not** claim "8× everywhere," and we do **not** claim a
 > free ~1.7× deployable gain.
 
 ### Diagnostic Figure

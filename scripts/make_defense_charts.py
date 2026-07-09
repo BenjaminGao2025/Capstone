@@ -145,32 +145,34 @@ def fig_cdf(f, l, title, fname):
 
 def fig_ood_mitigation():
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
-    arms = ["FCFS", "LTR", "LTR+aging60\n+protect"]
-    means = [49.6, 24.3, 37.1]
-    p99s = [110.4, 156.2, 98.0]
+    arms = ["FCFS", "LTR", "V1 (aging60\n+protect)"]
+    means = [40.4, 22.9, 34.8]
+    mean_stds = [2.1, 1.2, 3.2]
+    p99s = [96.0, 148.6, 87.7]
+    p99_stds = [2.1, 4.2, 6.4]
     colors = [C_FCFS, C_LTR, "#1976D2"]
 
     ax = axes[0]
-    bars = ax.bar(arms, means, color=colors, width=0.55)
+    bars = ax.bar(arms, means, color=colors, yerr=mean_stds, capsize=5, width=0.55)
     for b, v in zip(bars, means):
-        ax.text(b.get_x() + b.get_width() / 2, v + 1, f"{v}s",
+        ax.text(b.get_x() + b.get_width() / 2, v + 4, f"{v}s",
                 ha="center", fontsize=11, fontweight="bold")
     ax.set_ylabel("Mean TTFT (s)")
-    ax.set_ylim(0, max(means) * 1.2)
+    ax.set_ylim(0, max(means) * 1.3)
     ax.set_title("OOD Mean TTFT (lower is better)")
     ax.grid(axis="y", alpha=0.3)
 
     ax = axes[1]
-    bars = ax.bar(arms, p99s, color=colors, width=0.55)
+    bars = ax.bar(arms, p99s, color=colors, yerr=p99_stds, capsize=5, width=0.55)
     for b, v in zip(bars, p99s):
-        ax.text(b.get_x() + b.get_width() / 2, v + 2, f"{v}s",
+        ax.text(b.get_x() + b.get_width() / 2, v + 8, f"{v}s",
                 ha="center", fontsize=11, fontweight="bold")
     ax.set_ylabel("P99 TTFT (s)")
-    ax.set_ylim(0, max(p99s) * 1.2)
+    ax.set_ylim(0, max(p99s) * 1.3)
     ax.set_title("OOD P99 TTFT (lower is better)")
     ax.grid(axis="y", alpha=0.3)
 
-    fig.suptitle("Combinatorial Strategy (aging+protect): Mean and P99 both outperform FCFS", fontsize=13, fontweight="bold")
+    fig.suptitle("Combinatorial Strategy (V1): Mean and P99 both outperform FCFS (multi-seed ± std)", fontsize=13, fontweight="bold")
     fig.tight_layout(rect=[0, 0.03, 1, 1])
     fig.savefig(f"{OUT}/fig_ood_mitigation.png", dpi=180)
     print(f"saved {OUT}/fig_ood_mitigation.png")
@@ -178,8 +180,8 @@ def fig_ood_mitigation():
 
 def fig_ood_survival():
     fig, ax = plt.subplots(figsize=(7, 4.6))
-    arms = ["FCFS", "LTR", "LTR+aging\n(120s)", "LTR+aging\n+protect"]
-    completed = [500, 15, 15, 500]
+    arms = ["FCFS", "LTR", "LTR+aging\n(120s)", "V1\n(aging60+protect)"]
+    completed = [500, 22, 15, 500]
     colors = [C_FCFS, C_LTR, "#F9A825", "#1976D2"]
     
     bars = ax.bar(arms, completed, color=colors, width=0.55)
