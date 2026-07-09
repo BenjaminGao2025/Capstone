@@ -192,7 +192,9 @@ def fig_ood_survival():
     ax.set_ylim(0, 550)
     ax.set_title("Preemption protection is the critical component for survival", fontsize=13, fontweight="bold")
     ax.grid(axis="y", alpha=0.3)
-    fig.tight_layout()
+    fig.text(0.5, 0.015, "Note: LTR crash (22/500) from 2026-07-09 Seed 0 rerun; LTR+aging crash (15/500) from 2026-06-21 run.",
+             ha="center", fontsize=9.5, style="italic")
+    fig.tight_layout(rect=[0, 0.04, 1, 1])
     fig.savefig(f"{OUT}/fig_ood_survival.png", dpi=180)
     print(f"saved {OUT}/fig_ood_survival.png")
 
