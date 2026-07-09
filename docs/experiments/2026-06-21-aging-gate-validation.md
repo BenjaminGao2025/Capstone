@@ -109,6 +109,7 @@ To bound the variance and prove the robustness of the combined V1 configuration 
 Findings:
 1. **Multi-seed confirmation:** The V1 configuration's Pareto-improvement at Rate 4 OOD is statistically robust. V1 beats FCFS on both mean TTFT (34.8s vs 40.4s) and tail TTFT (87.7s vs 96.0s).
 2. At Rate 8 OOD, V1 continues to outperform FCFS on both mean and tail latency, proving its robustness under heavy load.
+3. **Data Sanitization Note:** In order to comply with GitHub Push Protection (which flagged a hallucinated Slack webhook URL in the model's outputs on the OOD ShareGPT trace), the `generated_texts` field was stripped from all Part 2 JSON artifacts before committing. Statistical integrity remains intact; the remaining `ttfts` and `itls` arrays perfectly reconstruct the logged aggregate metrics.
 
 ## Follow-ups
 
