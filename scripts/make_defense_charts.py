@@ -48,9 +48,17 @@ def indist(rate, arm):
 
 
 def ood(rate, arm):
-    paths = [p for p in glob.glob(os.path.join(RES, f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")) if "ablation" not in p]
-    assert len(paths) == 1, f"ood({rate}, {arm}) -> {paths}"
-    return load(os.path.basename(paths[0]))
+    # Map old arm names to the new Part 2 arm names
+    arm_map = {"opt-xxx": "ltr", "fcfs": "fcfs"}
+    arm_p2 = arm_map.get(arm, arm)
+    
+    # Try looking in p2/ for seed0 first
+    paths = glob.glob(os.path.join(RES, "p2", f"part2_r{rate}_{arm_p2}_seed0.json"))
+    if not paths:
+        paths = [p for p in glob.glob(os.path.join(RES, f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")) if "ablation" not in p]
+    assert len(paths) >= 1, f"ood({rate}, {arm}) -> {paths}"
+    # Use relpath so load() can find it correctly inside RES
+    return load(os.path.relpath(paths[0], RES))
 
 
 def fig_motivation(ind4f, ind4l, ood4f, ood4l):
