@@ -1,0 +1,164 @@
+diff --git a/benchmarks/benchmark_serving_real.py b/benchmarks/benchmark_serving_real.py
+index 73d6a52..7c2c4fd 100644
+--- a/benchmarks/benchmark_serving_real.py
++++ b/benchmarks/benchmark_serving_real.py
+@@ -264,7 +264,7 @@ async def benchmark(
+     else:
+         raise ValueError(f"Unknown backend: {backend}")
+ 
+-    if schedule_type == "fcfs" or schedule_type == "fcfs-origin" or schedule_type.startswith("sjf-predictor-") or schedule_type.startswith("mlfq") or schedule_type.startswith("predictor-") or schedule_type.startswith("opt") or schedule_type.startswith("xpt") or schedule_type.startswith("tpt"):
++    if schedule_type == "fcfs" or schedule_type == "fcfs-origin" or schedule_type.startswith("sjf-predictor-") or schedule_type.startswith("mlfq") or schedule_type.startswith("predictor-") or schedule_type.startswith("opt") or schedule_type.startswith("xpt") or schedule_type.startswith("tpt") or schedule_type.startswith("ipt"):
+ 
+         pass
+     elif schedule_type == "sjf" or schedule_type.startswith("srtf") or schedule_type.startswith("sjf-preempt-") or schedule_type.startswith("sjf-ranking-") or schedule_type.startswith("sjf-file-") : 
+@@ -332,8 +332,10 @@ async def benchmark(
+ 
+     benchmark_start_time = time.perf_counter()
+     tasks = []
++    send_ts = []  # per-request arrival (send) time relative to benchmark start
+     async for request in get_request(input_requests, request_rate, cv):
+         prompt, prompt_len, use_output_len, est_tokens, prerun_len = request
++        send_ts.append(time.perf_counter() - benchmark_start_time)
+         #print("igNORE: ", output_len == -1, eval(output_len_def) != -1, output_len == -1 or eval(output_len_def) != -1, output_len_def)
+         request_func_input = RequestFuncInput(
+             model=model_id,
+@@ -401,14 +403,16 @@ async def benchmark(
+     print("{:<40} {:<10.2f}".format("P99 Nlatency (ms):", np.percentile(nlatencies, 99) * 1000))
+     print("=" * 50)
+ 
++    # pred/aux scores 只含成功请求,actual_output_lens 含全部(失败补 0):用 success mask 对齐
++    _ok_lens = [l for l, o in zip(actual_output_lens, outputs) if o.success]
+     if est_lens[0] is not None:
+         tau, p = scipy.stats.kendalltau(est_lens, actual_output_lens)
+         print(f"Est Kendall's Tau: {tau} {p}")
+     if pred_scores[0] is not None:
+-        tau, p = scipy.stats.kendalltau(pred_scores, actual_output_lens)
++        tau, p = scipy.stats.kendalltau(pred_scores, _ok_lens)
+         print(f"Pred Kendall's Tau: {tau} {p}")
+     if aux_model_scores[0] is not None:
+-        tau, p = scipy.stats.kendalltau(aux_model_scores, actual_output_lens)
++        tau, p = scipy.stats.kendalltau(aux_model_scores, _ok_lens)
+         print(f"Aux Model Kendall's Tau: {tau} {p}")
+ 
+ 
+@@ -431,9 +435,25 @@ async def benchmark(
+         "output_lens": actual_output_lens,
+         "ttfts": [output.ttft for output in outputs],
+         "itls": [output.itl for output in outputs],
++        "send_ts": send_ts,
++        "latencies": [output.latency for output in outputs],
++        "first_token_ts": [s + output.ttft for s, output in zip(send_ts, outputs)],
++        "completion_ts": [s + output.latency for s, output in zip(send_ts, outputs)],
+         "generated_texts": [output.generated_text for output in outputs],
+         "errors": [output.error for output in outputs],
++        "aux_model_scores": aux_model_scores,
++        "pred_scores": pred_scores,
+     }
++    # 预测器排序质量(LTR 失效证据链):in-dist Tau 高 / OOD Tau 掉
++    # scores 只含成功请求,与 _ok_lens(success 过滤后的真实长度)对齐
++    if aux_model_scores[0] is not None:
++        _tau, _p = scipy.stats.kendalltau(aux_model_scores, _ok_lens)
++        result["aux_kendall_tau"] = float(_tau)
++        result["aux_kendall_p"] = float(_p)
++    if pred_scores[0] is not None:
++        _tau, _p = scipy.stats.kendalltau(pred_scores, _ok_lens)
++        result["pred_kendall_tau"] = float(_tau)
++        result["pred_kendall_p"] = float(_p)
+ 
+     if eval_max_tpot:
+         max_tpots = []
+diff --git a/vllm/core/scheduler.py b/vllm/core/scheduler.py
+index 1a56ad6..8fc3057 100644
+--- a/vllm/core/scheduler.py
++++ b/vllm/core/scheduler.py
+@@ -322,6 +322,13 @@ class Scheduler:
+             self._get_ordered_requests = self._get_tpt_ordered_requests
+             self._update_priority = self._update_tpt_priority
+             self.need_score = True
++        elif self.schedule_type.startswith("opt-aging"):
++            # OPT + waiting-time aging gate for OOD tail-latency mitigation.
++            # Requests waiting > AGING_GATE_S seconds get FCFS priority.
++            self._schedule = self._general_schedule
++            self._get_ordered_requests = self._get_opt_aging_ordered_requests
++            self._update_priority = self._update_opt_priority
++            self.need_score = True
+         elif self.schedule_type.startswith("opt"):
+             self._schedule = self._general_schedule
+             self._get_ordered_requests = self._get_opt_ordered_requests
+@@ -1002,6 +1009,76 @@ class Scheduler:
+     def _update_opt_priority(self):
+         pass
+ 
++    def _get_opt_aging_ordered_requests(self):
++        """OPT with waiting-time aging gate (OOD tail-latency mitigation).
++
++        Any request whose wall-clock waiting time exceeds AGING_GATE_S
++        seconds is escalated to FCFS priority, overriding its LTR rank.
++        Among aged requests, earliest-arrival goes first (pure FCFS).
++        Non-aged requests keep normal LTR order (highest score first).
++
++        Threshold proxy:
++          AGING_GATE_S (env var, default 120s) approximates W=8 from
++          the single-server simulation (confidence_gate_sim.py).  The sim
++          used W * abstract mean_service_time; real-world mapping is
++          approximate because TTFT ≠ pure service time (includes
++          queuing delay).  See docs/experiments/ for derivation.
++
++        Gate trigger count is logged so post-hoc analysis can confirm
++        the gate is actually activating under OOD load.
++        """
++        # 1. Score unscored waiting requests via aux model (same as OPT)
++        need_aux_scores = [r for r in self.waiting
++                          if r.need_aux_model_score()]
++        if need_aux_scores:
++            self.aux_model.obtain_aux_scores(need_aux_scores)
++
++        # 2. Aging gate threshold (wall-clock seconds)
++        aging_s = float(os.environ.get("AGING_GATE_S", "120"))
++        preempt_protect = int(os.environ.get("PREEMPT_PROTECT", "0"))
++        now = time.time()
++
++        all_reqs = (list(self.waiting) + list(self.running)
++                    + list(self.swapped))
++
++        n_aged = 0
++        waiting_ids = set(id(r) for r in self.waiting)
++
++        def _key(req):
++            nonlocal n_aged
++            is_waiting = id(req) in waiting_ids
++            waited = now - req.metrics.arrival_time
++            
++            if preempt_protect and not is_waiting:
++                # Absolute highest priority: protect running/swapped from being preempted by any waiting request
++                return (-1, 0.0, -req.aux_model_score)
++                
++            if is_waiting and waited >= aging_s:
++                n_aged += 1
++                # Tier 0: aged waiting → FCFS by arrival time
++                return (0, req.metrics.arrival_time, 0.0)
++            else:
++                # Tier 1: normal LTR (or running/swapped if protect=0) → highest aux_model_score first
++                return (1, 0.0, -req.aux_model_score)
++
++        ret = list(sorted(all_reqs, key=_key))
++
++        if n_aged > 0:
++            logger.info("aging-gate: %d/%d waiting requests exceeded %.0fs threshold",
++                        n_aged, len(self.waiting), aging_s)
++
++        if preempt_protect:
++            running_and_swapped = list(self.running) + list(self.swapped)
++            if running_and_swapped:
++                min_running_score = min(r.aux_model_score for r in running_and_swapped)
++                n_prevented = sum(1 for r in self.waiting if (now - r.metrics.arrival_time) < aging_s and r.aux_model_score > min_running_score)
++                if n_prevented > 0:
++                    logger.info("preempt-protect: prevented %d score-based preemptions", n_prevented)
++
++        return ret
++
++
++
+     def _get_ropt_ordered_requests(self):
+ 
+         need_aux_scores = []
