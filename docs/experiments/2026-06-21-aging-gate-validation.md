@@ -113,9 +113,9 @@ Findings:
 
 ## Follow-ups
 
-- [ ] Promote the six Phase-A JSONs and four Phase-C JSONs from
+- [x] Promote the six Phase-A JSONs and four Phase-C JSONs from
       `server_backup/results/` into `results/llama3-8b/` with an `-aging-val`
       / `-aging-protect` naming suffix, and mark the two crash-artifact JSONs.
 - [x] Rerun the clean 3-arm comparison with the final V1 config
       (gate 60 s + preemption protection) as one script, multi-seed (0/1/2).
-- [ ] Add the aging/protect arms to `scripts/make_defense_charts.py`.
+- [x] Add the aging/protect arms to `scripts/make_defense_charts.py`.

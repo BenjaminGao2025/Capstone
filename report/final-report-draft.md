@@ -66,7 +66,9 @@ Four-arm policy comparison (lmsys rate 8, mean TTFT):
 | Paper strategy + internal head | 1.84 s |
 | V1: LTR + AgingGate + PreemptProtect | 13.07 s* |
 
-* Validated via dedicated Part 1 run on 2026-07-09. The prior 1.70s claim was incorrect; V1 preserves robustness but sacrifices a significant portion of the mean TTFT advantage over FCFS (16.36s) on the in-distribution trace.
+* Validated via dedicated Part 1 run on 2026-07-09. 
+
+- [ ] **Narrative Update**: V1 is **not** the fastest configuration in-distribution. Pure LTR achieves 2.03s, while V1 trades off most of that gain (dropping to 13.07s) to guarantee safety out-of-distribution. V1 is the *only* configuration that survives rate 8 OOD without crashing.
 
 - [ ] verify these four numbers against committed JSONs before submission (Paths: FCFS=results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-104351.json, LTR OPT=results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104730.json, Ablation=results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260613-021954-ablation-ourshead.json, V1=results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-v1-val-seed0.json)
 - [ ] Gate-threshold ablation: 30/60/120 s (Phase B/C of validation doc)
