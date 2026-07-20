@@ -6,8 +6,8 @@ import requests
 URL = "http://localhost:8000/v1/completions"
 MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
 
-PROMPT_LENGTHS = [128, 256, 512, 1024, 2048, 4096]
-BATCH_SIZES = [1, 2, 4, 8, 16, 32, 64]
+PROMPT_LENGTHS = [512, 1024, 2048, 4096]
+BATCH_SIZES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 
 CSV_PATH = "results/kv_cache_batch_results.csv"
 JSON_PATH = "results/kv_cache_batch_results.json"
@@ -23,14 +23,14 @@ def test_batch(prompt_length, batch_size):
     payload = {
         "model": MODEL,
         "prompt": prompts,
-        "max_tokens": 32,
+        "max_tokens": 256,
         "temperature": 0
     }
 
     start = time.time()
 
     try:
-        response = requests.post(URL, json=payload, timeout=300)
+        response = requests.post(URL, json=payload, timeout=150)
         latency = time.time() - start
 
         if response.status_code == 200:
