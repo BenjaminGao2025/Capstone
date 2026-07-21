@@ -14,6 +14,7 @@ export HF_ENDPOINT=https://hf-mirror.com
 export TORCH_CUDA_ARCH_LIST=8.6
 export PATH=/usr/local/cuda/bin:$PATH
 export CUDA_HOME=/usr/local/cuda
+export HF_HUB_ENABLE_HF_TRANSFER=1
 EOF
 grep -q "source /hy-tmp/env.sh" /root/.bashrc || sed -i "1i source /hy-tmp/env.sh" /root/.bashrc
 source /hy-tmp/env.sh

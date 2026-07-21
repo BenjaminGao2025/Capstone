@@ -4,18 +4,14 @@
 # token 仅经环境变量传入,绝不写入任何文件
 set -e
 source /hy-tmp/env.sh
-: "${HF_TOKEN:?需要 HF_TOKEN 环境变量(Read-only token,用完即可在 HF 后台撤销)}"
-
+# Use modelscope instead of HF to avoid gated token issues and speed up in China
 python3 - <<'PY'
 import os
-from huggingface_hub import snapshot_download
+from modelscope.hub.snapshot_download import snapshot_download
 p = snapshot_download(
-    "meta-llama/Meta-Llama-3-8B-Instruct",
+    "LLM-Research/Meta-Llama-3-8B-Instruct",
     local_dir="/hy-tmp/models/Meta-Llama-3-8B-Instruct",
-    token=os.environ["HF_TOKEN"],
-    # 只要 safetensors + 配置/tokenizer,跳过 original/ 下 16GB 的 .pth
-    allow_patterns=["*.safetensors", "*.safetensors.index.json", "config.json",
-                    "generation_config.json", "tokenizer*", "special_tokens_map.json"],
+    ignore_file_pattern=[r".*\.pth$"] # skip the 16GB original weights
 )
 print("downloaded to:", p)
 PY
