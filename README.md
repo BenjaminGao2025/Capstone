@@ -270,8 +270,7 @@ Two hardware-measured conclusions:
    trace** (lower mean *and* lower p99), matching the simulation's W=8
    prediction. The deployable mean gain is ~1.2–1.3×, not raw LTR's 1.7×.
 
-Single seed; multi-seed repetition is future work. Full write-up:
-[aging-gate GPU validation report](docs/experiments/2026-06-21-aging-gate-validation.md).
+Multi-seed validation (seeds 0/1/2, 2026-07-09) confirms the rate-4 Pareto improvement: V1 mean TTFT 34.8s vs FCFS 40.4s, p99 87.7s vs 96.0s. See Phase D in [aging-gate GPU validation report](docs/experiments/2026-06-21-aging-gate-validation.md); raw JSONs in `results/llama3-8b/p2/`.
 Raw JSONs and logs: `server_backup/results/`.
 
 ## Current Status
