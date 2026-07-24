@@ -1,4 +1,22 @@
 #!/bin/bash
+# DEPRECATED / UNSAFE FOR NEW RUNS
+#
+# Historical Phase-D orchestrator.
+# It writes all arms into a shared output directory and selects the newest
+# global JSON. It also uses a ShareGPT-trained predictor on a ShareGPT trace.
+# Therefore its outputs must not be described as LMSYS->ShareGPT OOD validation.
+#
+# Use scripts/run_one_experiment_safe.sh for all future runs.
+if [[ "${ALLOW_UNSAFE_HISTORICAL_RUNNER:-0}" != "1" ]]; then
+  echo "ERROR: Refusing deprecated unsafe runner." >&2
+  echo "This script uses a shared output directory and global-latest-JSON" >&2
+  echo "selection, which risks result contamination." >&2
+  echo "" >&2
+  echo "Use scripts/run_one_experiment_safe.sh for new experiments." >&2
+  echo "To run this historical script for reproduction purposes only:" >&2
+  echo "  ALLOW_UNSAFE_HISTORICAL_RUNNER=1 bash scripts/run_part2.sh" >&2
+  exit 2
+fi
 set -e
 source /hy-tmp/env.sh
 

@@ -3,7 +3,7 @@
 # Smoke defaults: facebook/opt-1.3b, 50 prompts, output-len 128
 # Llama run:  MODEL=meta-llama/Llama-3.1-8B-Instruct OUTPUT_LEN=-1 NUM_PROMPTS=500 ./run_fcfs.sh
 set -e
-source /hy-tmp/env.sh
+source "${ENV_FILE:-/hy-tmp/env.sh}"
 
 MODEL="${MODEL:-facebook/opt-1.3b}"
 TOKENIZER="${TOKENIZER:-$MODEL}"
@@ -14,12 +14,12 @@ OUTPUT_LEN="${OUTPUT_LEN:-128}"   # -1 = replay true trace output lengths
 SEED="${SEED:-0}"
 SWAP_SPACE="${SWAP_SPACE:-8}"     # cgroup RAM limit is 23GiB — do not raise blindly
 PORT="${PORT:-3343}"
-RESULT_DIR=/hy-tmp/results
+RESULT_DIR="${RESULT_DIR:-/hy-tmp/results}"
 SCHED=fcfs
 MAXLEN_ARG=""
 [ -n "$MAX_MODEL_LEN" ] && MAXLEN_ARG="--max-model-len $MAX_MODEL_LEN"
 
-cd /hy-tmp/vllm-ltr/benchmarks
+cd "${VLLM_LTR_DIR:-/hy-tmp/vllm-ltr}/benchmarks"
 mkdir -p "$RESULT_DIR"
 
 python3 -m vllm.entrypoints.openai.api_server \

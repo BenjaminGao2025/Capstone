@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "generator",
+    "experiments"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "generator": {
+      "type": "string"
+    },
+    "experiments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "experiment_id",
+          "phase",
+          "claim_category",
+          "arm",
+          "scheduler_type",
+          "dataset_name",
+          "test_distribution",
+          "predictor_name",
+          "predictor_training_distribution",
+          "predictor_config_path",
+          "predictor_config_sha256",
+          "predictor_provenance_quality",
+          "distribution_relation",
+          "request_rate",
+          "seed",
+          "expected_num_prompts",
+          "completed",
+          "status",
+          "eligible_for_aggregation",
+          "result_path",
+          "result_sha256",
+          "log_path",
+          "source_script",
+          "source_commit",
+          "duplicate_of",
+          "notes"
+        ],
+        "properties": {
+          "experiment_id": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "baseline",
+              "ablation",
+              "sweep",
+              "ood_characterization"
+            ]
+          },
+          "claim_category": {
+            "type": "string",
+            "enum": [
+              "in_distribution",
+              "ood_characterization",
+              "mitigation",
+              "stability",
+              "crash_evidence",
+              "ablation",
+              "baseline"
+            ]
+          },
+          "arm": {
+            "type": "string"
+          },
+          "scheduler_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dataset_name": {
+            "type": "string"
+          },
+          "test_distribution": {
+            "type": "string",
+            "enum": [
+              "lmsys",
+              "sharegpt",
+              "other",
+              "unknown"
+            ]
+          },
+          "predictor_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "predictor_training_distribution": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "lmsys",
+              "sharegpt",
+              "other",
+              "unknown",
+              null
+            ]
+          },
+          "predictor_config_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "predictor_config_sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "predictor_provenance_quality": {
+            "type": "string",
+            "enum": [
+              "full",
+              "partial",
+              "script-only",
+              "unknown"
+            ]
+          },
+          "distribution_relation": {
+            "type": "string",
+            "enum": [
+              "in_distribution",
+              "ood",
+              "matched",
+              "unknown"
+            ]
+          },
+          "request_rate": {
+            "type": "number"
+          },
+          "seed": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "expected_num_prompts": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "incomplete",
+              "crashed",
+              "unverified"
+            ]
+          },
+          "eligible_for_aggregation": {
+            "type": "boolean"
+          },
+          "result_path": {
+            "type": "string"
+          },
+          "result_sha256": {
+            "type": "string"
+          },
+          "log_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_script": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_commit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duplicate_of": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "original_result_path": {
+            "type": "string"
+          },
+          "original_result_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sanitizer_version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

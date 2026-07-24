@@ -9,25 +9,112 @@ Outputs (figures/):
 
 Run from repo root:  python3 scripts/make_defense_charts.py
 """
-import glob
 import json
 import os
+import hashlib
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import pathlib
 
-RES = "results/llama3-8b"
-OUT = "figures"
+# Find repo root to resolve relative paths
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MANIFEST_PATH = os.path.join(REPO_ROOT, "results", "submission_manifest.json")
+OUT = os.path.join(REPO_ROOT, "figures")
 C_FCFS, C_LTR = "#777777", "#2e7d32"
 RATES = [2, 4, 8, 16, 32]
 
+with open(MANIFEST_PATH) as f:
+    manifest = json.load(f)
 
-def load(pattern):
-    paths = [p for p in glob.glob(os.path.join(RES, pattern)) if "crashed" not in p]
-    assert len(paths) == 1, f"{pattern} -> {paths}"
-    d = json.load(open(paths[0]))
+def hash_file(filepath):
+    sha256 = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+def get_experiment_data(exp_id):
+    matching_exps = [e for e in manifest.get("experiments", []) if e.get("experiment_id") == exp_id]
+    if len(matching_exps) == 0:
+        raise RuntimeError(f"Missing experiment ID: {exp_id}")
+    if len(matching_exps) > 1:
+        raise RuntimeError(f"Duplicate experiment ID: {exp_id}")
+        
+    exp = matching_exps[0]
+    
+    if not exp.get("eligible_for_aggregation"):
+        raise RuntimeError(f"Ineligible ID: {exp_id}")
+        
+    if exp.get("status") != "valid":
+        raise RuntimeError(f"Status not valid for ID: {exp_id}")
+        
+    rel_path = exp.get("result_path")
+    if not rel_path:
+        raise RuntimeError(f"Missing result_path for ID: {exp_id}")
+        
+    # Check path containment
+    p = pathlib.Path(REPO_ROOT) / rel_path
+    try:
+        resolved_p = p.resolve()
+        resolved_root = pathlib.Path(REPO_ROOT).resolve()
+    except Exception:
+        raise RuntimeError(f"Path resolution error for ID: {exp_id}")
+        
+    if not resolved_p.is_relative_to(resolved_root):
+        raise RuntimeError(f"Unsafe path traversal for ID: {exp_id}")
+        
+    path = os.path.join(REPO_ROOT, rel_path)
+    if not os.path.exists(path):
+        raise RuntimeError(f"Missing result file for ID: {exp_id}")
+        
+    # SHA verification
+    actual_sha = hash_file(path)
+    if actual_sha != exp.get("result_sha256"):
+        raise RuntimeError(f"SHA mismatch for ID: {exp_id}")
+        
+    with open(path) as f:
+        d = json.load(f)
+        
+    if not isinstance(d, dict):
+        raise RuntimeError(f"Result JSON is not an object for ID: {exp_id}")
+        
+    # JSON metadata consistency check
+    manifest_arm = exp.get("arm")
+    json_sched = d.get("schedule_type", "")
+    
+    arm_matches = False
+    manifest_sched = exp.get("scheduler_type")
+    if manifest_sched and json_sched:
+        arm_matches = (manifest_sched == json_sched)
+    if not arm_matches and json_sched:
+        if manifest_arm == "fcfs" and json_sched == "fcfs": arm_matches = True
+        elif manifest_arm == "ltr" and json_sched.startswith("opt-") and not json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm == "v1" and json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm.startswith("opt-aging-") and json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm.startswith("opt-") and not manifest_arm.startswith("opt-aging-") and json_sched.startswith("opt-") and not json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm == json_sched: arm_matches = True
+        
+    if not arm_matches:
+        raise RuntimeError(f"Wrong scheduler for ID: {exp_id}, JSON has {json_sched}, manifest arm is {manifest_arm}")
+        
+    if "request_rate" in d and abs(d["request_rate"] - exp.get("request_rate", -1)) > 1e-5:
+        raise RuntimeError(f"request_rate mismatch for ID: {exp_id}")
+        
+    if d.get("completed") != exp.get("completed"):
+        raise RuntimeError(f"completed count mismatch for ID: {exp_id}")
+        
+    if exp.get("eligible_for_aggregation") and d.get("completed") != exp.get("expected_num_prompts"):
+        raise RuntimeError(f"completed != expected_num_prompts for ID: {exp_id}")
+        
+    if len(d.get("ttfts", [])) != d.get("completed", -1):
+        raise RuntimeError(f"len(ttfts) mismatch for ID: {exp_id}")
+        
+    if len(d.get("itls", [])) != d.get("completed", -1):
+        raise RuntimeError(f"len(itls) mismatch for ID: {exp_id}")
+        
     lat = np.sort([t + sum(i) for t, i in zip(d["ttfts"], d["itls"])])
     return {
         "lat": lat,
@@ -35,30 +122,8 @@ def load(pattern):
         "mean_lat": float(lat.mean()),
         "p99_lat": float(np.percentile(lat, 99)),
         "tau": d.get("aux_kendall_tau"),
+        "result_sha256": exp.get("result_sha256"),
     }
-
-
-def indist(rate, arm):
-    # sweep files only (exclude the rate-8 probe runs by timestamp prefix 10*)
-    pat = f"vllm-{rate}.0qps-*-{arm}-20260611-1[01]*.json" if arm != "tpt-class10-xxx" \
-        else f"vllm-{rate}.0qps-*-{arm}-*.json"
-    paths = [p for p in glob.glob(os.path.join(RES, pat)) if "ood" not in p]
-    assert len(paths) == 1, f"{pat} -> {paths}"
-    return load(os.path.basename(paths[0]))
-
-
-def ood(rate, arm):
-    # Map old arm names to the new Part 2 arm names
-    arm_map = {"opt-xxx": "ltr", "fcfs": "fcfs"}
-    arm_p2 = arm_map.get(arm, arm)
-    
-    # Try looking in p2/ for seed0 first
-    paths = glob.glob(os.path.join(RES, "p2", f"part2_r{rate}_{arm_p2}_seed0.json"))
-    if not paths:
-        paths = [p for p in glob.glob(os.path.join(RES, f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")) if "ablation" not in p]
-    assert len(paths) >= 1, f"ood({rate}, {arm}) -> {paths}"
-    # Use relpath so load() can find it correctly inside RES
-    return load(os.path.relpath(paths[0], RES))
 
 
 def fig_motivation(ind4f, ind4l, ood4f, ood4l):
@@ -98,7 +163,7 @@ def fig_motivation(ind4f, ind4l, ood4f, ood4l):
              "(FCFS completes 500/500 on the identical workload).",
              ha="center", fontsize=9.5, style="italic", color="#c62828")
     fig.tight_layout(rect=[0, 0.05, 1, 1])
-    fig.savefig(f"{OUT}/fig_motivation.png", dpi=180)
+    fig.savefig(f"{OUT}/fig_motivation.png", dpi=180, metadata={'Date': None})
     print(f"saved {OUT}/fig_motivation.png")
 
 
@@ -124,7 +189,7 @@ def fig_main(sweep):
     axes[1].set_title("Llama-3-8B-Instruct, LMSYS trace, 500 prompts")
     fig.suptitle("In-distribution reproduction: LTR vs FCFS", fontsize=13, fontweight="bold")
     fig.tight_layout()
-    fig.savefig(f"{OUT}/fig_ttft_vs_rate.png", dpi=180)
+    fig.savefig(f"{OUT}/fig_ttft_vs_rate.png", dpi=180, metadata={'Date': None})
     print(f"saved {OUT}/fig_ttft_vs_rate.png")
 
 
@@ -139,75 +204,22 @@ def fig_cdf(f, l, title, fname):
     ax.grid(alpha=0.3)
     ax.legend(loc="lower right")
     fig.tight_layout()
-    fig.savefig(f"{OUT}/{fname}", dpi=180)
+    fig.savefig(f"{OUT}/{fname}", dpi=180, metadata={'Date': None})
     print(f"saved {OUT}/{fname}")
-
-
-def fig_ood_mitigation():
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
-    arms = ["FCFS", "LTR", "V1 (aging60\n+protect)"]
-    means = [40.4, 22.9, 34.8]
-    mean_stds = [2.1, 1.2, 3.2]
-    p99s = [96.0, 148.6, 87.7]
-    p99_stds = [2.1, 4.2, 6.4]
-    colors = [C_FCFS, C_LTR, "#1976D2"]
-
-    ax = axes[0]
-    bars = ax.bar(arms, means, color=colors, yerr=mean_stds, capsize=5, width=0.55)
-    for b, v in zip(bars, means):
-        ax.text(b.get_x() + b.get_width() / 2, v + 4, f"{v}s",
-                ha="center", fontsize=11, fontweight="bold")
-    ax.set_ylabel("Mean TTFT (s)")
-    ax.set_ylim(0, max(means) * 1.3)
-    ax.set_title("OOD Mean TTFT (lower is better)")
-    ax.grid(axis="y", alpha=0.3)
-
-    ax = axes[1]
-    bars = ax.bar(arms, p99s, color=colors, yerr=p99_stds, capsize=5, width=0.55)
-    for b, v in zip(bars, p99s):
-        ax.text(b.get_x() + b.get_width() / 2, v + 8, f"{v}s",
-                ha="center", fontsize=11, fontweight="bold")
-    ax.set_ylabel("P99 TTFT (s)")
-    ax.set_ylim(0, max(p99s) * 1.3)
-    ax.set_title("OOD P99 TTFT (lower is better)")
-    ax.grid(axis="y", alpha=0.3)
-
-    fig.suptitle("Combinatorial Strategy (V1): Mean and P99 both outperform FCFS (multi-seed ± std)", fontsize=13, fontweight="bold")
-    fig.tight_layout(rect=[0, 0.03, 1, 1])
-    fig.savefig(f"{OUT}/fig_ood_mitigation.png", dpi=180)
-    print(f"saved {OUT}/fig_ood_mitigation.png")
-
-
-def fig_ood_survival():
-    fig, ax = plt.subplots(figsize=(7, 4.6))
-    arms = ["FCFS", "LTR", "LTR+aging\n(120s)", "V1\n(aging60+protect)"]
-    completed = [500, 22, 15, 500]
-    colors = [C_FCFS, C_LTR, "#F9A825", "#1976D2"]
-    
-    bars = ax.bar(arms, completed, color=colors, width=0.55)
-    for b, v in zip(bars, completed):
-        ax.text(b.get_x() + b.get_width() / 2, v + 10, f"{v}/500",
-                ha="center", fontsize=11, fontweight="bold")
-    ax.set_ylabel("Successful Requests")
-    ax.set_ylim(0, 550)
-    ax.set_title("Preemption protection is the critical component for survival", fontsize=13, fontweight="bold")
-    ax.grid(axis="y", alpha=0.3)
-    fig.text(0.5, 0.015, "Note: LTR crash (22/500) from 2026-07-09 Seed 0 rerun; LTR+aging crash (15/500) from 2026-06-21 run.",
-             ha="center", fontsize=9.5, style="italic")
-    fig.tight_layout(rect=[0, 0.04, 1, 1])
-    fig.savefig(f"{OUT}/fig_ood_survival.png", dpi=180)
-    print(f"saved {OUT}/fig_ood_survival.png")
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    sweep = {r: {"fcfs": indist(r, "fcfs"), "ltr": indist(r, "opt-xxx")} for r in RATES}
-    try:
-        for r in RATES:
-            sweep[r]["cls"] = indist(r, "tpt-class10-xxx")
-    except AssertionError:
-        pass  # class arm not run yet — fall back to two lines
-    ood4f, ood4l = ood(4, "fcfs"), ood(4, "opt-xxx")
+    
+    sweep = {
+        r: {
+            "fcfs": get_experiment_data(f"sweep-r{r}-fcfs"),
+            "ltr": get_experiment_data(f"sweep-r{r}-ltr")
+        } for r in RATES
+    }
+    
+    ood4f = get_experiment_data("ood-r4-fcfs")
+    ood4l = get_experiment_data("ood-r4-ltr")
 
     fig_motivation(sweep[4]["fcfs"], sweep[4]["ltr"], ood4f, ood4l)
     fig_main(sweep)
@@ -215,8 +227,34 @@ def main():
             "Latency CDF — in-distribution (LMSYS, rate 8)", "fig_cdf_indist_r8.png")
     fig_cdf(ood4f, ood4l,
             "Latency CDF — OOD (ShareGPT trace × LMSYS predictor, rate 4)", "fig_cdf_ood_r4.png")
-    fig_ood_mitigation()
-    fig_ood_survival()
+            
+    figure_inputs = {
+        "generator_version": "1.0.0",
+        "fig_motivation": {
+            "indist_r4_fcfs": {"exp_id": "sweep-r4-fcfs", "sha": sweep[4]["fcfs"]["result_sha256"], "p99_lat": sweep[4]["fcfs"]["p99_lat"]},
+            "indist_r4_ltr": {"exp_id": "sweep-r4-ltr", "sha": sweep[4]["ltr"]["result_sha256"], "tau": sweep[4]["ltr"]["tau"], "p99_lat": sweep[4]["ltr"]["p99_lat"]},
+            "ood_r4_fcfs": {"exp_id": "ood-r4-fcfs", "sha": ood4f["result_sha256"], "p99_lat": ood4f["p99_lat"]},
+            "ood_r4_ltr": {"exp_id": "ood-r4-ltr", "sha": ood4l["result_sha256"], "tau": ood4l["tau"], "p99_lat": ood4l["p99_lat"]}
+        },
+        "fig_ttft_vs_rate": {
+            str(r): {
+                "fcfs": {"exp_id": f"sweep-r{r}-fcfs", "sha": sweep[r]["fcfs"]["result_sha256"], "mean_ttft": sweep[r]["fcfs"]["mean_ttft"], "mean_lat": sweep[r]["fcfs"]["mean_lat"]},
+                "ltr": {"exp_id": f"sweep-r{r}-ltr", "sha": sweep[r]["ltr"]["result_sha256"], "mean_ttft": sweep[r]["ltr"]["mean_ttft"], "mean_lat": sweep[r]["ltr"]["mean_lat"]}
+            } for r in RATES
+        },
+        "fig_cdf_indist_r8": {
+            "fcfs": {"exp_id": "sweep-r8-fcfs", "sha": sweep[8]["fcfs"]["result_sha256"], "mean_lat": sweep[8]["fcfs"]["mean_lat"]},
+            "ltr": {"exp_id": "sweep-r8-ltr", "sha": sweep[8]["ltr"]["result_sha256"], "mean_lat": sweep[8]["ltr"]["mean_lat"]}
+        },
+        "fig_cdf_ood_r4": {
+            "fcfs": {"exp_id": "ood-r4-fcfs", "sha": ood4f["result_sha256"], "mean_lat": ood4f["mean_lat"]},
+            "ltr": {"exp_id": "ood-r4-ltr", "sha": ood4l["result_sha256"], "mean_lat": ood4l["mean_lat"]}
+        }
+    }
+    with open(os.path.join(OUT, "figure_inputs.json"), "w") as f:
+        json.dump(figure_inputs, f, indent=2)
+    print(f"saved {OUT}/figure_inputs.json")
+    
     print("ALL_CHARTS_DONE")
 
 

@@ -91,9 +91,17 @@ The rate-4 OOD FCFS arm measured 49.6 s mean TTFT vs the committed baseline of
 `run_ood_aging.sh`, committed values are **not** overwritten; the drift is
 flagged here (likely rented-host variance; needs multi-seed to bound).
 
-## Phase D — Multi-Seed V1 Generalization (2026-07-09)
+## Phase D — Multi-Seed Stability Validation (2026-07-09)
 
-To bound the variance and prove the robustness of the combined V1 configuration (Aging Gate 60s + Preemption Protection), we ran a 3-arm multi-seed validation (seeds 0, 1, 2) on the OOD ShareGPT trace at Rate 4 and Rate 8.
+> **Provenance correction (2026-07-24):** Phase D used `scripts/run_part2.sh`,
+> which explicitly sets `PREDICTOR=.../opt-125m-llama3-8b-sharegpt-score-trainbucket10-b32/usage_config.json`
+> (ShareGPT-trained predictor) on the ShareGPT test trace. This is a
+> **matched-distribution** experiment, not an LMSYS→ShareGPT OOD test.
+> Phase D results demonstrate multi-seed stability under matched conditions.
+> The true OOD evidence remains Phases A/C above (LMSYS-trained predictor,
+> single seed).
+
+To bound the variance of the combined V1 configuration (Aging Gate 60s + Preemption Protection), we ran a 3-arm multi-seed validation (seeds 0, 1, 2) on the ShareGPT trace at Rate 4 and Rate 8 using a **ShareGPT-trained predictor** (matched distribution).
 
 | Rate | Arm  | Completed (Mean) | TTFT Mean (ms) ± Std | TTFT P99 (ms) ± Std | vs FCFS |
 |---:|:---|---:|---:|---:|:---|
@@ -107,8 +115,9 @@ To bound the variance and prove the robustness of the combined V1 configuration 
 *Note on Rate 8 LTR:* In this validation run, the raw LTR baseline did not crash outright on seed 1 (completed 500/500). However, V1 remains consistently safe across seeds.
 
 Findings:
-1. **Multi-seed confirmation:** The V1 configuration's Pareto-improvement at Rate 4 OOD is statistically robust. V1 beats FCFS on both mean TTFT (34.8s vs 40.4s) and tail TTFT (87.7s vs 96.0s).
-2. At Rate 8 OOD, V1 continues to outperform FCFS on both mean and tail latency, proving its robustness under heavy load.
+1. **Multi-seed confirmation:** Under the matched-distribution ShareGPT predictor, the V1 configuration shows stable Pareto-improvement at Rate 4. V1 beats FCFS on both mean TTFT (34.8s vs 40.4s) and tail TTFT (87.7s vs 96.0s).
+2. At Rate 8 with the matched predictor, V1 continues to outperform FCFS on both mean and tail latency, confirming stability across seeds.
+3. **Important limitation:** These Phase D results do not prove LMSYS→ShareGPT OOD robustness. The true OOD evidence is Phases A/C (single seed, LMSYS predictor).
 3. **Data Sanitization Note:** In order to comply with GitHub Push Protection (which flagged a hallucinated Slack webhook URL in the model's outputs on the OOD ShareGPT trace), the `generated_texts` field was stripped from all Part 2 JSON artifacts before committing. Statistical integrity remains intact; the remaining `ttfts` and `itls` arrays perfectly reconstruct the logged aggregate metrics.
 
 ## Follow-ups

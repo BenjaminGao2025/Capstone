@@ -1,0 +1,66 @@
+name: Submission Integrity Check
+on:
+  push:
+    branches:
+      - main
+      - 'antigravity/**'
+  pull_request:
+    branches: [main]
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Compile Python scripts
+        run: python -m compileall scripts/
+      
+      - name: Syntax check shell scripts
+        run: |
+          bash -n scripts/run_fcfs.sh
+          bash -n scripts/run_ltr.sh
+          bash -n scripts/run_ltr_aging.sh
+          bash -n scripts/run_one_experiment_safe.sh
+      
+      - name: Run submission audit
+        run: |
+          python scripts/audit_submission_results.py \
+            --manifest results/submission_manifest.json \
+            --json-output results/submission_audit.json \
+            --markdown-output results/submission_audit.md
+            
+      - name: Verify audit lock
+        run: |
+          git diff --exit-code -- \
+            results/submission_audit.json \
+            results/submission_audit.md
+            
+      - name: Install chart dependencies
+        run: pip install matplotlib numpy
+        
+      - name: Test chart generation
+        run: python scripts/make_defense_charts.py
+        
+      - name: Verify figure inputs lock
+        run: git diff --exit-code -- figures/figure_inputs.json
+
+      
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: submission-artifacts
+          path: |
+            results/submission_audit.json
+            results/submission_audit.md
+            figures/*.png
+            figures/figure_inputs.json
