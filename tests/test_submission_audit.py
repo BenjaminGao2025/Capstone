@@ -1,295 +1,300 @@
+import unittest
 import os
 import json
 import tempfile
-import unittest
-import hashlib
 import subprocess
-import sys
+import shutil
+from pathlib import Path
 
-from scripts.audit_submission_results import audit_manifest, hash_file
+# Import the script to test functions directly
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts')))
+import audit_submission_results
 
 class TestSubmissionAudit(unittest.TestCase):
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.repo_root = self.temp_dir.name
+        self.temp_dir = tempfile.mkdtemp()
+        self.repo_root = self.temp_dir
+        self.manifest_path = os.path.join(self.temp_dir, "manifest.json")
         
-    def tearDown(self):
-        self.temp_dir.cleanup()
+        # Base valid result JSON
+        self.valid_result = {
+            "date": "20260709-000000",
+            "model_id": "test-model",
+            "schedule_type": "fcfs",
+            "request_rate": 4.0,
+            "completed": 500,
+            "num_prompts": 500,
+            "mean_ttft_ms": 100.0,
+            "ttfts": [0.1] * 500,
+            "itls": [[0.01]] * 500
+        }
         
-    def create_result_file(self, content, filename):
-        path = os.path.join(self.repo_root, filename)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as f:
-            if isinstance(content, str):
-                f.write(content)
-            else:
-                json.dump(content, f)
-        return path, hash_file(path)
-        
-    def create_manifest(self, experiments, filename="manifest.json"):
-        path = os.path.join(self.repo_root, filename)
-        manifest = {
+        # Base valid manifest structure
+        self.valid_manifest = {
             "schema_version": "1.0.0",
             "generated_at": "2026-07-24T00:00:00Z",
             "generator": "test",
-            "experiments": experiments
+            "experiments": [
+                self.create_valid_exp("exp1")
+            ]
         }
-        with open(path, "w") as f:
-            json.dump(manifest, f)
-        return path
 
-    def get_base_experiment(self):
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def create_valid_exp(self, exp_id="exp1"):
         return {
-            "experiment_id": "exp_1",
+            "experiment_id": exp_id,
             "phase": "A",
             "claim_category": "in_distribution",
             "arm": "fcfs",
             "scheduler_type": "fcfs",
-            "dataset_name": "test-dataset",
+            "dataset_name": "lmsys",
             "test_distribution": "lmsys",
-            "predictor_name": "none",
-            "predictor_training_distribution": "unknown",
-            "predictor_config_path": None,
-            "predictor_config_sha256": None,
-            "predictor_provenance_quality": "unknown",
-            "distribution_relation": "unknown",
+            "predictor_name": "lmsys_pred",
+            "predictor_training_distribution": "lmsys",
+            "predictor_config_path": "configs/pred.json",
+            "predictor_config_sha256": "a" * 64,
+            "predictor_provenance_quality": "full",
+            "distribution_relation": "in_distribution",
             "request_rate": 4.0,
-            "seed": 42,
+            "seed": 0,
             "expected_num_prompts": 500,
             "completed": 500,
             "status": "valid",
             "eligible_for_aggregation": True,
-            "result_path": "results/exp_1.json",
-            "result_sha256": "",
+            "result_path": f"{exp_id}.json",
+            "result_sha256": "", # filled later
             "log_path": None,
-            "source_script": None,
-            "source_commit": None,
+            "source_script": "run.sh",
+            "source_commit": "abc",
             "duplicate_of": None,
             "notes": None
         }
 
-    def get_base_result(self):
-        return {
-          "date": "20260709-000000",
-          "model_id": "test-model",
-          "schedule_type": "fcfs",
-          "request_rate": 4.0,
-          "completed": 500,
-          "num_prompts": 500,
-          "mean_ttft_ms": 100.0,
-          "ttfts": [0.1] * 500,
-          "itls": [[0.01]] * 500
-        }
+    def write_json(self, path, data):
+        with open(path, "w") as f:
+            json.dump(data, f)
+        return audit_submission_results.hash_file(path)
 
-    # a. Valid manifest with all checks passing
-    def test_valid_manifest(self):
-        exp = self.get_base_experiment()
-        res = self.get_base_result()
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
-        manifest_path = self.create_manifest([exp])
+    def test_01_valid_manifest(self):
+        # a. Valid manifest with all checks passing
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        sha = self.write_json(res_path, self.valid_result)
         
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertFalse(audit["has_blockers"])
-        self.assertEqual(audit["results"][0]["audit_verdict"], "PASS")
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertFalse(res["has_blockers"])
+        self.assertEqual(res["results"][0]["audit_verdict"], "METADATA_VERIFIED")
 
-    # b. Result file does not exist
-    def test_missing_result_file(self):
-        exp = self.get_base_experiment()
-        exp["result_path"] = "results/missing.json"
-        manifest_path = self.create_manifest([exp])
+    def test_02_missing_result_file(self):
+        # b. Result file does not exist
+        self.valid_manifest["experiments"][0]["result_sha256"] = "a" * 64
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        self.assertIn("Result file does not exist", audit["results"][0]["errors"])
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertEqual(res["results"][0]["audit_verdict"], "FAIL")
+        self.assertIn("Result file does not exist", res["results"][0]["errors"])
 
-    # c. SHA-256 mismatch
-    def test_sha_mismatch(self):
-        exp = self.get_base_experiment()
-        res = self.get_base_result()
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = "badsha"
-        manifest_path = self.create_manifest([exp])
+    def test_03_sha256_mismatch(self):
+        # c. SHA-256 mismatch
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        self.write_json(res_path, self.valid_result)
         
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        self.assertIn("SHA-256 mismatch", audit["results"][0]["errors"])
+        self.valid_manifest["experiments"][0]["result_sha256"] = "b" * 64
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("SHA-256 mismatch", res["results"][0]["errors"])
 
-    # d. Duplicate result SHA-256
-    def test_duplicate_sha(self):
-        exp1 = self.get_base_experiment()
-        exp2 = self.get_base_experiment()
-        exp2["experiment_id"] = "exp_2"
-        exp2["result_path"] = "results/exp_2.json"
+    def test_04_duplicate_sha256(self):
+        # d. Duplicate result SHA-256
+        res_path1 = os.path.join(self.repo_root, "exp1.json")
+        sha = self.write_json(res_path1, self.valid_result)
         
-        res = self.get_base_result()
-        path1, sha1 = self.create_result_file(res, "results/exp_1.json")
-        path2, sha2 = self.create_result_file(res, "results/exp_2.json")
+        exp2 = self.create_valid_exp("exp2")
+        exp2["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.valid_manifest["experiments"].append(exp2)
         
-        exp1["result_sha256"] = sha1
-        exp2["result_sha256"] = sha2
+        res_path2 = os.path.join(self.repo_root, "exp2.json")
+        self.write_json(res_path2, self.valid_result)
         
-        manifest_path = self.create_manifest([exp1, exp2])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        found = False
-        for err in audit["results"][1]["errors"]:
-            if "Duplicate result SHA-256" in err:
-                found = True
-        self.assertTrue(found)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("Duplicate result SHA-256 with exp1", res["results"][1]["errors"])
 
-    # e. Completed < expected_num_prompts
-    def test_completed_less_than_expected(self):
-        exp = self.get_base_experiment()
-        exp["completed"] = 499
-        exp["expected_num_prompts"] = 500
-        exp["eligible_for_aggregation"] = True
+    def test_05_completed_lt_expected(self):
+        # e. Completed < expected_num_prompts
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        res_data = self.valid_result.copy()
+        res_data["completed"] = 400
+        res_data["ttfts"] = [0.1] * 400
+        res_data["itls"] = [[0.01]] * 400
+        sha = self.write_json(res_path, res_data)
         
-        res = self.get_base_result()
-        res["completed"] = 499
-        res["ttfts"] = [0.1] * 499
-        res["itls"] = [[0.1]] * 499
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["completed"] = 400
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
-        
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        self.assertIn("Completed < expected_num_prompts while eligible_for_aggregation=true", audit["results"][0]["errors"])
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("Completed < expected_num_prompts while eligible_for_aggregation=true", res["results"][0]["errors"])
 
-    # f. Crash entry incorrectly set as eligible_for_aggregation=true
-    def test_crash_eligible(self):
-        exp = self.get_base_experiment()
-        exp["status"] = "crashed"
-        exp["eligible_for_aggregation"] = True
+    def test_06_crash_eligible(self):
+        # f. Crash entry incorrectly set as eligible_for_aggregation=true
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        sha = self.write_json(res_path, self.valid_result)
         
-        res = self.get_base_result()
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["status"] = "crashed"
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        self.assertIn("Crash/incomplete entry incorrectly set as eligible_for_aggregation=true", audit["results"][0]["errors"])
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("Crash/incomplete entry incorrectly set as eligible_for_aggregation=true", res["results"][0]["errors"])
 
-    # g. ShareGPT predictor + ShareGPT test marked as 'ood' (should fail)
-    def test_train_test_same_ood(self):
-        exp = self.get_base_experiment()
-        exp["predictor_training_distribution"] = "sharegpt"
-        exp["test_distribution"] = "sharegpt"
-        exp["distribution_relation"] = "ood"
+    def test_07_sharegpt_ood(self):
+        # g. ShareGPT predictor + ShareGPT test marked as 'ood'
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        sha = self.write_json(res_path, self.valid_result)
         
-        res = self.get_base_result()
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["predictor_training_distribution"] = "sharegpt"
+        self.valid_manifest["experiments"][0]["test_distribution"] = "sharegpt"
+        self.valid_manifest["experiments"][0]["distribution_relation"] = "ood"
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        
-        errs = audit["results"][0]["errors"]
-        found = any("train and test distribution are same" in e for e in errs)
-        self.assertTrue(found)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("Marked 'ood' but train and test distribution are same", res["results"][0]["errors"])
 
-    # h. Phase D entry incorrectly labeled as OOD
-    def test_phase_d_ood(self):
-        exp = self.get_base_experiment()
-        exp["phase"] = "D"
-        exp["predictor_training_distribution"] = "sharegpt"
-        exp["test_distribution"] = "sharegpt"
-        exp["distribution_relation"] = "ood"
+    def test_08_phase_d_ood(self):
+        # h. Phase D entry incorrectly labeled as OOD
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        sha = self.write_json(res_path, self.valid_result)
         
-        res = self.get_base_result()
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["phase"] = "D"
+        self.valid_manifest["experiments"][0]["predictor_training_distribution"] = "sharegpt"
+        self.valid_manifest["experiments"][0]["test_distribution"] = "sharegpt"
+        self.valid_manifest["experiments"][0]["distribution_relation"] = "ood"
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        
-        errs = audit["results"][0]["errors"]
-        found = any("Phase D entry correctly ShareGPT-ShareGPT but incorrectly labeled as OOD" in e for e in errs)
-        self.assertTrue(found)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Phase D entry correctly ShareGPT-ShareGPT but incorrectly labeled as OOD" in e for e in res["results"][0]["errors"]))
 
-    # i. generated_texts detection
-    def test_generated_texts(self):
-        exp = self.get_base_experiment()
-        res = self.get_base_result()
-        res["generated_texts"] = ["hello"]
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
+    def test_09_generated_texts(self):
+        # i. generated_texts detection
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        res_data = self.valid_result.copy()
+        res_data["generated_texts"] = ["text"]
+        sha = self.write_json(res_path, res_data)
         
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        self.assertFalse(audit["has_blockers"])
-        self.assertIn("generated_texts found in results", audit["results"][0]["warnings"])
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertFalse(res["has_blockers"])
+        self.assertTrue(any("EXPLICIT REVIEW REQUIRED: generated_texts found in eligible result" in w for w in res["results"][0]["warnings"]))
 
-    # j. Secret-like string detection
-    def test_secret_detection(self):
-        exp = self.get_base_experiment()
-        res = self.get_base_result()
-        res["some_field"] = "hooks.slack.com/services/T000/B000/XXX"
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
+    def test_10_secret_detection_stream(self):
+        # j. Secret-like string detection > 10KB
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        res_data = self.valid_result.copy()
+        # Add 15KB of padding
+        res_data["padding"] = "A" * 15000
+        # Add secret
+        res_data["secret"] = "https://hooks.slack.com/services/T000/B000/XXXX"
+        sha = self.write_json(res_path, res_data)
         
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        self.assertIn("Secret-like string detection", audit["results"][0]["errors"])
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("Secret-like string detection", res["results"][0]["errors"])
 
-    # k. Scheduler arm conflict
-    def test_scheduler_arm_conflict(self):
-        exp = self.get_base_experiment()
-        exp["arm"] = "fcfs"
-        res = self.get_base_result()
-        res["schedule_type"] = "opt-test"
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
+    def test_11_scheduler_conflict(self):
+        # k. Scheduler arm conflict
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        res_data = self.valid_result.copy()
+        res_data["schedule_type"] = "opt-aging-10"
+        sha = self.write_json(res_path, res_data)
         
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        self.assertIn("Scheduler arm conflict", audit["results"][0]["errors"])
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["arm"] = "fcfs"
+        self.valid_manifest["experiments"][0]["scheduler_type"] = "fcfs"
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("Scheduler arm conflict", res["results"][0]["errors"])
 
-    # l. Request rate conflict
-    def test_request_rate_conflict(self):
-        exp = self.get_base_experiment()
-        exp["request_rate"] = 4.0
-        res = self.get_base_result()
-        res["request_rate"] = 5.0
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
+    def test_12_request_rate_conflict(self):
+        # l. Request rate conflict
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        res_data = self.valid_result.copy()
+        res_data["request_rate"] = 8.0
+        sha = self.write_json(res_path, res_data)
         
-        manifest_path = self.create_manifest([exp])
-        audit = audit_manifest(manifest_path, self.repo_root)
-        self.assertTrue(audit["has_blockers"])
-        self.assertIn("Request rate conflict", audit["results"][0]["errors"])
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.valid_manifest["experiments"][0]["request_rate"] = 4.0
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertIn("Request rate conflict", res["results"][0]["errors"])
+        
+    def test_13_path_traversal(self):
+        # Path traversal check
+        self.valid_manifest["experiments"][0]["result_path"] = "../test.json"
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Invalid/unsafe path for result_path" in e for e in res["results"][0]["errors"]))
+
+    def test_14_absolute_path(self):
+        # Absolute path check
+        self.valid_manifest["experiments"][0]["result_path"] = "/etc/passwd"
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Invalid/unsafe path for result_path" in e for e in res["results"][0]["errors"]))
 
     def test_cli(self):
-        exp = self.get_base_experiment()
-        res = self.get_base_result()
-        path, sha = self.create_result_file(res, "results/exp_1.json")
-        exp["result_sha256"] = sha
-        # Using absolute path for result_path to bypass repo_root assumption
-        exp["result_path"] = path
-        manifest_path = self.create_manifest([exp], "manifest2.json")
+        res_path = os.path.join(self.repo_root, "exp1.json")
+        sha = self.write_json(res_path, self.valid_result)
         
-        script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts", "audit_submission_results.py")
-        json_out = os.path.join(self.temp_dir.name, "out.json")
-        md_out = os.path.join(self.temp_dir.name, "out.md")
+        self.valid_manifest["experiments"][0]["result_sha256"] = sha
+        self.write_json(self.manifest_path, self.valid_manifest)
         
-        cmd = [
-            sys.executable,
-            script_path,
-            "--manifest", manifest_path,
+        json_out = os.path.join(self.temp_dir, "out.json")
+        md_out = os.path.join(self.temp_dir, "out.md")
+        
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'audit_submission_results.py'))
+        
+        result = subprocess.run([
+            "python3", script_path,
+            "--manifest", self.manifest_path,
             "--json-output", json_out,
-            "--markdown-output", md_out
-        ]
+            "--markdown-output", md_out,
+            "--repo-root", self.repo_root
+        ], capture_output=True, text=True)
         
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
         self.assertEqual(result.returncode, 0)
         self.assertTrue(os.path.exists(json_out))
         self.assertTrue(os.path.exists(md_out))

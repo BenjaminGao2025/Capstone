@@ -3,7 +3,6 @@ import json
 import hashlib
 import argparse
 import re
-from pathlib import Path
 
 SECRET_PATTERNS = [
     re.compile(r"hooks\.slack"),
@@ -14,6 +13,92 @@ SECRET_PATTERNS = [
     re.compile(r"BEGIN PRIVATE KEY")
 ]
 
+# Standard library schema validation
+def validate_schema(manifest):
+    errors = []
+    if not isinstance(manifest, dict):
+        return ["Manifest is not a JSON object"]
+    
+    required_top = ["schema_version", "generated_at", "generator", "experiments"]
+    for req in required_top:
+        if req not in manifest:
+            errors.append(f"Missing top-level required field: {req}")
+            
+    if "experiments" in manifest and not isinstance(manifest["experiments"], list):
+        errors.append("Field 'experiments' must be a list")
+        return errors
+        
+    required_exp = [
+        "experiment_id", "phase", "claim_category", "arm", "scheduler_type", 
+        "dataset_name", "test_distribution", "predictor_name", 
+        "predictor_training_distribution", "predictor_config_path", 
+        "predictor_config_sha256", "predictor_provenance_quality", 
+        "distribution_relation", "request_rate", "seed", "expected_num_prompts", 
+        "completed", "status", "eligible_for_aggregation", "result_path", 
+        "result_sha256", "log_path", "source_script", "source_commit", 
+        "duplicate_of", "notes"
+    ]
+    
+    allowed_exp = required_exp + [
+        "original_result_path", "original_result_sha256", "sanitizer_version"
+    ]
+    
+    enums = {
+        "phase": ["A", "B", "C", "D", "baseline", "ablation", "sweep", "ood_characterization"],
+        "claim_category": ["in_distribution", "ood_characterization", "mitigation", "stability", "crash_evidence", "ablation", "baseline"],
+        "test_distribution": ["lmsys", "sharegpt", "other", "unknown"],
+        "predictor_training_distribution": ["lmsys", "sharegpt", "other", "unknown", None],
+        "predictor_provenance_quality": ["full", "partial", "script-only", "unknown"],
+        "distribution_relation": ["in_distribution", "ood", "matched", "unknown"],
+        "status": ["valid", "incomplete", "crashed", "unverified"]
+    }
+    
+    for i, exp in enumerate(manifest.get("experiments", [])):
+        if not isinstance(exp, dict):
+            errors.append(f"Experiment {i} is not an object")
+            continue
+            
+        for req in required_exp:
+            if req not in exp:
+                errors.append(f"Experiment {i} missing required field: {req}")
+                
+        for k in exp.keys():
+            if k not in allowed_exp:
+                errors.append(f"Experiment {i} has unauthorized additional property: {k}")
+                
+        if not exp.get("experiment_id"):
+            errors.append(f"Experiment {i} has empty experiment_id")
+            
+        for k, allowed in enums.items():
+            if k in exp and exp[k] not in allowed:
+                errors.append(f"Experiment {i} field '{k}' value '{exp[k]}' not in allowed enums")
+                
+        # Type checks
+        if "request_rate" in exp and not isinstance(exp["request_rate"], (int, float)):
+            errors.append(f"Experiment {i} field 'request_rate' must be number")
+        if "expected_num_prompts" in exp and not isinstance(exp["expected_num_prompts"], int):
+            errors.append(f"Experiment {i} field 'expected_num_prompts' must be integer")
+        if "completed" in exp and not isinstance(exp["completed"], int):
+            errors.append(f"Experiment {i} field 'completed' must be integer")
+        if "eligible_for_aggregation" in exp and not isinstance(exp["eligible_for_aggregation"], bool):
+            errors.append(f"Experiment {i} field 'eligible_for_aggregation' must be boolean")
+            
+        # SHA format check (64 hex chars)
+        if exp.get("result_sha256") and not re.match(r"^[0-9a-f]{64}$", exp["result_sha256"]):
+            errors.append(f"Experiment {i} result_sha256 is not a valid SHA-256")
+            
+    return errors
+
+def validate_path_safety(path_str):
+    if not path_str:
+        return True
+    if path_str.startswith("/"):
+        return False
+    parts = path_str.split("/")
+    if ".." in parts:
+        return False
+    return True
+
 def hash_file(filepath):
     sha256_hash = hashlib.sha256()
     with open(filepath, "rb") as f:
@@ -21,10 +106,12 @@ def hash_file(filepath):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
-def check_secrets(content):
-    for pattern in SECRET_PATTERNS:
-        if pattern.search(content):
-            return True
+def check_secrets_stream(filepath):
+    with open(filepath, "r", errors="ignore") as f:
+        for line in f:
+            for pattern in SECRET_PATTERNS:
+                if pattern.search(line):
+                    return True
     return False
 
 def check_scheduler_match(manifest_arm, json_schedule_type):
@@ -33,24 +120,22 @@ def check_scheduler_match(manifest_arm, json_schedule_type):
     if manifest_arm == "v1" and json_schedule_type.startswith("opt-aging-"): return True
     if manifest_arm.startswith("opt-aging-") and json_schedule_type.startswith("opt-aging-"): return True
     if manifest_arm.startswith("opt-") and not manifest_arm.startswith("opt-aging-") and json_schedule_type.startswith("opt-") and not json_schedule_type.startswith("opt-aging-"): return True
-    
-    # Just generic fallback match
     if manifest_arm == json_schedule_type: return True
-    
     return False
 
 def audit_manifest(manifest_path, repo_root):
     with open(manifest_path, "r") as f:
         manifest = json.load(f)
 
-    if "schema_version" not in manifest:
-        return {"error": "Missing schema_version"}
+    results = []
+    has_blockers = False
+    
+    schema_errors = validate_schema(manifest)
+    if schema_errors:
+        return {"error": "Schema validation failed:\n" + "\n".join(schema_errors), "has_blockers": True, "results": []}
 
     seen_ids = set()
     seen_shas = {}
-    
-    results = []
-    has_blockers = False
     
     for exp in manifest.get("experiments", []):
         exp_id = exp.get("experiment_id")
@@ -68,29 +153,36 @@ def audit_manifest(manifest_path, repo_root):
             "expected_num_prompts": exp.get("expected_num_prompts"),
             "eligible_for_aggregation": exp.get("eligible_for_aggregation"),
             "sha_status": "PASS",
-            "audit_verdict": "PASS",
+            "audit_verdict": "METADATA_VERIFIED", # Base successful verdict
             "warnings": [],
             "errors": []
         }
 
-        # 3. Verify experiment_id uniqueness
+        # Verify experiment_id uniqueness
         if exp_id in seen_ids:
             audit_result["errors"].append("Duplicate experiment_id")
             has_blockers = True
         seen_ids.add(exp_id)
 
-        # 4a. Verify result_path exists
+        # Path safety validation
+        paths_to_check = ["result_path", "log_path", "source_script", "predictor_config_path"]
+        for p in paths_to_check:
+            if not validate_path_safety(exp.get(p)):
+                audit_result["errors"].append(f"Invalid/unsafe path for {p}: {exp.get(p)}")
+                has_blockers = True
+
         result_rel_path = exp.get("result_path")
         result_abs_path = os.path.join(repo_root, result_rel_path) if result_rel_path else None
         
         if not result_abs_path or not os.path.exists(result_abs_path):
             audit_result["errors"].append("Result file does not exist")
             audit_result["sha_status"] = "FAIL"
+            audit_result["audit_verdict"] = "FAIL"
             has_blockers = True
             results.append(audit_result)
             continue
             
-        # 4b. Compute SHA-256 of result file and compare
+        # Compute SHA-256 of result file and compare
         actual_sha = hash_file(result_abs_path)
         expected_sha = exp.get("result_sha256")
         if actual_sha != expected_sha:
@@ -98,33 +190,30 @@ def audit_manifest(manifest_path, repo_root):
             audit_result["sha_status"] = "FAIL"
             has_blockers = True
             
-        # 4c. Check for duplicate SHA-256 across experiments
+        # Check for duplicate SHA-256 across experiments
         if actual_sha in seen_shas:
             audit_result["errors"].append(f"Duplicate result SHA-256 with {seen_shas[actual_sha]}")
             has_blockers = True
         seen_shas[actual_sha] = exp_id
         
         # Open result JSON
-        with open(result_abs_path, "r") as f:
-            content_start = f.read(10240) # first 10KB
-            f.seek(0)
-            try:
+        try:
+            with open(result_abs_path, "r") as f:
                 res_data = json.load(f)
-            except Exception as e:
-                audit_result["errors"].append(f"Failed to parse result JSON: {e}")
-                has_blockers = True
-                results.append(audit_result)
-                continue
+        except Exception as e:
+            audit_result["errors"].append(f"Failed to parse result JSON: {e}")
+            audit_result["audit_verdict"] = "FAIL"
+            has_blockers = True
+            results.append(audit_result)
+            continue
                 
-        # 4d. Open result JSON and check
+        # JSON validation checks
         res_sched = res_data.get("schedule_type")
-        # Primary check: manifest scheduler_type vs JSON schedule_type
         manifest_sched = exp.get("scheduler_type")
         arm_matches = False
         if manifest_sched and res_sched:
             arm_matches = (manifest_sched == res_sched)
         if not arm_matches and res_sched:
-            # Fallback: check arm name
             arm_matches = check_scheduler_match(exp.get("arm"), res_sched)
         if res_sched and not arm_matches:
              audit_result["errors"].append("Scheduler arm conflict")
@@ -142,16 +231,19 @@ def audit_manifest(manifest_path, repo_root):
             audit_result["errors"].append("Completed < expected_num_prompts while eligible_for_aggregation=true")
             has_blockers = True
             
-        # 4e. Check if generated_texts exists
+        # Generated Texts Check
         if "generated_texts" in res_data:
-            audit_result["warnings"].append("generated_texts found in results")
+            if exp.get("eligible_for_aggregation"):
+                audit_result["warnings"].append("EXPLICIT REVIEW REQUIRED: generated_texts found in eligible result. Sanitized derivative required for public submission.")
+            else:
+                audit_result["warnings"].append("generated_texts found in results")
             
-        # 4f. Search for secret-like patterns
-        if check_secrets(content_start):
+        # Secret Search (stream)
+        if check_secrets_stream(result_abs_path):
             audit_result["errors"].append("Secret-like string detection")
             has_blockers = True
             
-        # 4g. Verify distribution_relation consistency
+        # Verify distribution_relation consistency
         train_dist = exp.get("predictor_training_distribution")
         test_dist = exp.get("test_distribution")
         rel = exp.get("distribution_relation")
@@ -166,12 +258,12 @@ def audit_manifest(manifest_path, repo_root):
             audit_result["errors"].append("Phase D entry correctly ShareGPT-ShareGPT but incorrectly labeled as OOD")
             has_blockers = True
             
-        # 4h. Verify crash/incomplete entries
+        # Verify crash/incomplete entries
         if exp.get("status") in ["crashed", "incomplete"] and exp.get("eligible_for_aggregation"):
             audit_result["errors"].append("Crash/incomplete entry incorrectly set as eligible_for_aggregation=true")
             has_blockers = True
             
-        # 4i. Check latency array lengths
+        # Check latency array lengths
         ttfts = res_data.get("ttfts", [])
         itls = res_data.get("itls", [])
         expected_len = res_data.get("num_prompts", res_data.get("completed", -1))
@@ -199,7 +291,7 @@ def audit_manifest(manifest_path, repo_root):
         "has_blockers": has_blockers,
         "summary": {
             "total": len(manifest.get("experiments", [])),
-            "passed": sum(1 for r in results if r["audit_verdict"] == "PASS"),
+            "passed": sum(1 for r in results if r["audit_verdict"] != "FAIL"),
             "failed": sum(1 for r in results if r["audit_verdict"] == "FAIL"),
         }
     }
@@ -209,7 +301,7 @@ def format_markdown(audit_results):
     lines.append("| experiment_id | phase | arm | rate | seed | predictor | train_dist | test_dist | relation | completed/expected | SHA status | eligible | audit_verdict | warnings |")
     lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     
-    for r in audit_results["results"]:
+    for r in audit_results.get("results", []):
         exp_id = r.get("experiment_id", "")
         phase = r.get("phase", "")
         arm = r.get("arm", "")
@@ -234,13 +326,25 @@ def main():
     parser.add_argument("--manifest", required=True, help="Path to submission manifest JSON")
     parser.add_argument("--json-output", required=True, help="Path to output JSON")
     parser.add_argument("--markdown-output", required=True, help="Path to output Markdown")
+    parser.add_argument("--repo-root", help="Override repository root path (for testing)")
     
     args = parser.parse_args()
     
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if args.repo_root:
+        repo_root = os.path.abspath(args.repo_root)
+    else:
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
     manifest_path = os.path.abspath(args.manifest)
     
     audit_data = audit_manifest(manifest_path, repo_root)
+    
+    if "error" in audit_data:
+        print(f"FATAL ERROR: {audit_data['error']}")
+        # Still write minimal JSON if requested
+        with open(args.json_output, "w") as f:
+            json.dump(audit_data, f, indent=2)
+        exit(1)
     
     with open(args.json_output, "w") as f:
         json.dump(audit_data, f, indent=2)
@@ -248,7 +352,7 @@ def main():
     with open(args.markdown_output, "w") as f:
         f.write(format_markdown(audit_data))
         
-    if audit_data.get("has_blockers") or "error" in audit_data:
+    if audit_data.get("has_blockers"):
         exit(1)
     else:
         exit(0)

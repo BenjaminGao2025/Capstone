@@ -23,13 +23,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-2.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-102707.json",
-      "result_sha256": "18e90a0572af4a8ed5f4489773b21b492473b4b3cf8e8c1897253f2a299e8e2c",
+      "result_path": "results/llama3-8b/vllm-2.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-102707-sanitized.json",
+      "result_sha256": "2f54972e19df738d131ca9eb91b25434638a427099c8b9f63fa7cde298a513fc",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-2.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-102707.json",
+      "original_result_sha256": "18e90a0572af4a8ed5f4489773b21b492473b4b3cf8e8c1897253f2a299e8e2c",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r2-ltr",
@@ -51,13 +54,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-2.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-103235.json",
-      "result_sha256": "2a97c856b693a95ac858f0d7f040b2fc08906edafbe7b8e031759e1430a88496",
+      "result_path": "results/llama3-8b/vllm-2.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-103235-sanitized.json",
+      "result_sha256": "e0e97fe7b05f46dced9d27b545b1af7d1d73e3039bdb8b3cc61767e5a23e23cc",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-2.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-103235.json",
+      "original_result_sha256": "2a97c856b693a95ac858f0d7f040b2fc08906edafbe7b8e031759e1430a88496",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r4-fcfs",
@@ -79,13 +85,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-103623.json",
-      "result_sha256": "84dcb83b0e5449bc6f4264d0e18e6ee16990fde100fc50bec6ef1a5df2929ddc",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-103623-sanitized.json",
+      "result_sha256": "8746f782c49a106ba4cb249683a0b16e2092f3b39200985b9e6dc826a8a3bd9e",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-103623.json",
+      "original_result_sha256": "84dcb83b0e5449bc6f4264d0e18e6ee16990fde100fc50bec6ef1a5df2929ddc",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r4-ltr",
@@ -107,13 +116,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104011.json",
-      "result_sha256": "d3f38102e4c78e2d60edf2405d7b206597982b46cd38f5243a195b1f5f2c9d17",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104011-sanitized.json",
+      "result_sha256": "1054f2bf5f7e975b61d735fd6383313125a452a3fa12acb6557fef0e576b9334",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104011.json",
+      "original_result_sha256": "d3f38102e4c78e2d60edf2405d7b206597982b46cd38f5243a195b1f5f2c9d17",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r8-fcfs",
@@ -135,13 +147,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-104351.json",
-      "result_sha256": "f848198c87bb4c892c2e8c555e70a8a3b91dfa80d43a2841748013cf889916c9",
+      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-104351-sanitized.json",
+      "result_sha256": "90f1dd5544728cff43d7dcc6c83b09bcae2572a63e8e46a983de265fb2374c2a",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-104351.json",
+      "original_result_sha256": "f848198c87bb4c892c2e8c555e70a8a3b91dfa80d43a2841748013cf889916c9",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r8-ltr",
@@ -163,13 +178,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104730.json",
-      "result_sha256": "e9d4e437b33acc967d4e4979ae1d02622b7cee2f0f52dab617b499bad170df26",
+      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104730-sanitized.json",
+      "result_sha256": "fe4571c49de3efabb895769addcc81712b598fd7ad047193390b36965c586636",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-104730.json",
+      "original_result_sha256": "e9d4e437b33acc967d4e4979ae1d02622b7cee2f0f52dab617b499bad170df26",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r16-fcfs",
@@ -191,13 +209,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-16.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-105107.json",
-      "result_sha256": "c20415a795d6125a9b7a2f747c41f932b0d5963b779117514556c8f56082c2cc",
+      "result_path": "results/llama3-8b/vllm-16.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-105107-sanitized.json",
+      "result_sha256": "52d55a2fc5090af93df34bbeebfbf87788f098fb20a8d20125c425c6386db585",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-16.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-105107.json",
+      "original_result_sha256": "c20415a795d6125a9b7a2f747c41f932b0d5963b779117514556c8f56082c2cc",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r16-ltr",
@@ -219,13 +240,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-16.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-105439.json",
-      "result_sha256": "43b874fd3c807d20d8665c136d4c2dff7de385d567d4719c8bd996d05d63f1f4",
+      "result_path": "results/llama3-8b/vllm-16.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-105439-sanitized.json",
+      "result_sha256": "2c201fc4fcf121429ab2c5fe9d16378f484da26337a98294687c38d612361a50",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-16.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-105439.json",
+      "original_result_sha256": "43b874fd3c807d20d8665c136d4c2dff7de385d567d4719c8bd996d05d63f1f4",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r32-fcfs",
@@ -247,13 +271,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-32.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-105809.json",
-      "result_sha256": "fd2880288f82210cbc655005f8776fe1f5daa5ff6bec14f39006f7196e66eefb",
+      "result_path": "results/llama3-8b/vllm-32.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-105809-sanitized.json",
+      "result_sha256": "d3bcde479ea7bfa9c941fef7fdfc4a87e2c30e721eda03b4bca4835d62b3b924",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-32.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-105809.json",
+      "original_result_sha256": "fd2880288f82210cbc655005f8776fe1f5daa5ff6bec14f39006f7196e66eefb",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "sweep-r32-ltr",
@@ -275,13 +302,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-32.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-110139.json",
-      "result_sha256": "1a4a5f5aaac630337c51243a17671ad86df4fa80f7f19d8f446a34f4ac8f7876",
+      "result_path": "results/llama3-8b/vllm-32.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-110139-sanitized.json",
+      "result_sha256": "0a39b2b34f649461aad2ea76cf03712909aa834cad3fa4f020da0ce903d74bff",
       "log_path": null,
       "source_script": "scripts/run_rate_sweep.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-32.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-110139.json",
+      "original_result_sha256": "1a4a5f5aaac630337c51243a17671ad86df4fa80f7f19d8f446a34f4ac8f7876",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "ood-r4-fcfs",
@@ -303,13 +333,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-113110-ood-sharegpt.json",
-      "result_sha256": "95c255bf974fd260cfb259bae7d8bab7b4c5666c83dc81bfb39ff23604a76268",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-113110-ood-sharegpt-sanitized.json",
+      "result_sha256": "ba3a3b8c574e15010883882a55062dac38423ff4f5570ade2cb47dbd02667a49",
       "log_path": null,
       "source_script": "scripts/run_ood.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-113110-ood-sharegpt.json",
+      "original_result_sha256": "95c255bf974fd260cfb259bae7d8bab7b4c5666c83dc81bfb39ff23604a76268",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "ood-r4-ltr",
@@ -331,13 +364,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-113821-ood-sharegpt.json",
-      "result_sha256": "5f883888b4fe8cfc0ab24ef28b8297fec73ecde746b12f229d3a2a7333368018",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-113821-ood-sharegpt-sanitized.json",
+      "result_sha256": "f4ad6ce18ecb45c55186b92a3139081702774e042b9200148c31c704b394058b",
       "log_path": null,
       "source_script": "scripts/run_ood.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "OOD: LMSYS-trained predictor evaluated on ShareGPT trace (single seed)"
+      "notes": "OOD: LMSYS-trained predictor evaluated on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260611-113821-ood-sharegpt.json",
+      "original_result_sha256": "5f883888b4fe8cfc0ab24ef28b8297fec73ecde746b12f229d3a2a7333368018",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "ood-r8-fcfs",
@@ -359,13 +395,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-111049-ood-sharegpt.json",
-      "result_sha256": "d2af04458440c43fe77343b6bc4a8167a4ce3d7f883123f6be7ec4cbd2631461",
+      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-111049-ood-sharegpt-sanitized.json",
+      "result_sha256": "e13c956b9a79859c83e38273ff52d12e52f57ea1eb4a4d3fbd41f25916885d04",
       "log_path": null,
       "source_script": "scripts/run_ood.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": null
+      "notes": null,
+      "original_result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260611-111049-ood-sharegpt.json",
+      "original_result_sha256": "d2af04458440c43fe77343b6bc4a8167a4ce3d7f883123f6be7ec4cbd2631461",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "ood-r8-ltr-crash",
@@ -387,13 +426,16 @@
       "completed": 15,
       "status": "crashed",
       "eligible_for_aggregation": false,
-      "result_path": "results/llama3-8b/ood-rate8-crashed-evidence/vllm-8.0qps-opt-xxx-ood-sharegpt-crashed-n15.json",
-      "result_sha256": "08c589c2386437cee4ca44b1b4aad9f45a88ca5efcb19d9bd30f19b7715aed35",
+      "result_path": "results/llama3-8b/ood-rate8-crashed-evidence/vllm-8.0qps-opt-xxx-ood-sharegpt-crashed-n15-sanitized.json",
+      "result_sha256": "e0b847284cfa2b9555d488d0090cb0e1bd2be6780236924493b38db1a1ebb305",
       "log_path": null,
       "source_script": "scripts/run_ood.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Rate-8 OOD LTR crash evidence: 15/500 completed. Swap exhaustion from preemption churn."
+      "notes": "Rate-8 OOD LTR crash evidence: 15/500 completed. Swap exhaustion from preemption churn.",
+      "original_result_path": "results/llama3-8b/ood-rate8-crashed-evidence/vllm-8.0qps-opt-xxx-ood-sharegpt-crashed-n15.json",
+      "original_result_sha256": "08c589c2386437cee4ca44b1b4aad9f45a88ca5efcb19d9bd30f19b7715aed35",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseA-r4-fcfs",
@@ -415,13 +457,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260621-085526-ood-sharegpt-aging-val.json",
-      "result_sha256": "086985e0f023e8df242b1dcb1656941c4403f8eeb4ae6d88da64f66983492826",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260621-085526-ood-sharegpt-aging-val-sanitized.json",
+      "result_sha256": "176b0d63518deba800308146ed8d4051d44bcb2c5277a303e184f8e2447ee27b",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260621-085526-ood-sharegpt-aging-val.json",
+      "original_result_sha256": "086985e0f023e8df242b1dcb1656941c4403f8eeb4ae6d88da64f66983492826",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseA-r4-ltr",
@@ -443,13 +488,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260621-090244-ood-sharegpt-aging-val.json",
-      "result_sha256": "8d09adaad033b7bc4e4f34ac2676cdfd4839795a180632d59f604461c06346bf",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260621-090244-ood-sharegpt-aging-val-sanitized.json",
+      "result_sha256": "c423b83a2deec32495eb2aad5f73a55a7a87dd491b7788e067ac1b932791bea4",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260621-090244-ood-sharegpt-aging-val.json",
+      "original_result_sha256": "8d09adaad033b7bc4e4f34ac2676cdfd4839795a180632d59f604461c06346bf",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseA-r4-aging120",
@@ -471,13 +519,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-091001-ood-sharegpt-aging-val.json",
-      "result_sha256": "65ada2ad0d650629d17ed9e3c002b564fb6c6e37465dc98da8cb2291a9751e65",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-091001-ood-sharegpt-aging-val-sanitized.json",
+      "result_sha256": "5f512ca6b1f343396e04fdd68e4514661010bf258f50eb3a5c2d1d97413cceea",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-091001-ood-sharegpt-aging-val.json",
+      "original_result_sha256": "65ada2ad0d650629d17ed9e3c002b564fb6c6e37465dc98da8cb2291a9751e65",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseA-r8-fcfs",
@@ -499,13 +550,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260621-091640-ood-sharegpt-aging-val.json",
-      "result_sha256": "75435b85dc8241d39f52c361358fb7fdb2178ec3358d998995d79660c394bbe2",
+      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260621-091640-ood-sharegpt-aging-val-sanitized.json",
+      "result_sha256": "7b7d5a9d8cef576bcccdac546e2ba79de36046edcbb7b3fc3b220c143ea13d1f",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-fcfs-20260621-091640-ood-sharegpt-aging-val.json",
+      "original_result_sha256": "75435b85dc8241d39f52c361358fb7fdb2178ec3358d998995d79660c394bbe2",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseC-r4-protect30",
@@ -527,13 +581,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-112958-aging-protect.json",
-      "result_sha256": "84a0aee00762f24b64d0c9c61f5a989b4d217852083f923e09f915120d5b79c3",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-112958-aging-protect-sanitized.json",
+      "result_sha256": "c840e3a172b8688539bf753236f0d30048bb933c1f87568878d8391aec4e435a",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-112958-aging-protect.json",
+      "original_result_sha256": "84a0aee00762f24b64d0c9c61f5a989b4d217852083f923e09f915120d5b79c3",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseC-r4-protect60",
@@ -555,13 +612,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-113636-aging-protect.json",
-      "result_sha256": "d7ca32c15ecbe5fffb1af5594c1d845863f044a9695ab0a7eb51358a4e912149",
+      "result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-113636-aging-protect-sanitized.json",
+      "result_sha256": "c0721905c057f366c1b153153e479f87994ec9e8eba6e4239e099651c0f6a8b9",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-4.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-113636-aging-protect.json",
+      "original_result_sha256": "d7ca32c15ecbe5fffb1af5594c1d845863f044a9695ab0a7eb51358a4e912149",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseC-r8-protect30",
@@ -583,13 +643,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-114308-aging-protect.json",
-      "result_sha256": "ccec4962051a2abb0f0853c76b55efd74f6c358538c8cfc55dc7c2bf3efbc573",
+      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-114308-aging-protect-sanitized.json",
+      "result_sha256": "7ac150a236a9df4e0204df369e463ceac1415f56028fbd174db701ce03c1a4e3",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-114308-aging-protect.json",
+      "original_result_sha256": "ccec4962051a2abb0f0853c76b55efd74f6c358538c8cfc55dc7c2bf3efbc573",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseC-r8-protect60",
@@ -611,13 +674,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-114941-aging-protect.json",
-      "result_sha256": "790cb07c0fb94f8845c62722b8f99f0968c997ff5a356ee6bc1e56c3ae34fa7e",
+      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-114941-aging-protect-sanitized.json",
+      "result_sha256": "dd74736532943704691b9f6e4d24d73bd37998c6485771b8b0852dac8152998e",
       "log_path": null,
       "source_script": "scripts/run_ood_aging.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)"
+      "notes": "Phase A/C: OOD validation with LMSYS-trained predictor on ShareGPT trace (single seed)",
+      "original_result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-aging-xxx-20260621-114941-aging-protect.json",
+      "original_result_sha256": "790cb07c0fb94f8845c62722b8f99f0968c997ff5a356ee6bc1e56c3ae34fa7e",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "v1val-r8-fcfs",
@@ -695,13 +761,16 @@
       "completed": 500,
       "status": "valid",
       "eligible_for_aggregation": true,
-      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260613-021954-ablation-ourshead.json",
-      "result_sha256": "debcf105138a7c51f4e919ebbb58337bdd4908c80c2284844dfc880b762153f7",
+      "result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260613-021954-ablation-ourshead-sanitized.json",
+      "result_sha256": "b32c48fa17df60f8a9f5ae79666e7006c7726f42e6011b46bed57ac6887a8447",
       "log_path": null,
       "source_script": "scripts/p3v2_runs.sh",
       "source_commit": null,
       "duplicate_of": null,
-      "notes": "Head-swap ablation: paper strategy + internal prediction head"
+      "notes": "Head-swap ablation: paper strategy + internal prediction head",
+      "original_result_path": "results/llama3-8b/vllm-8.0qps-cv1.0-Meta-Llama-3-8B-Instruct-opt-xxx-20260613-021954-ablation-ourshead.json",
+      "original_result_sha256": "debcf105138a7c51f4e919ebbb58337bdd4908c80c2284844dfc880b762153f7",
+      "sanitizer_version": "1.0.0"
     },
     {
       "experiment_id": "phaseD-r4-fcfs-seed0",

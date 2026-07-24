@@ -42,20 +42,13 @@ def indist(rate, arm):
     # sweep files only (exclude the rate-8 probe runs by timestamp prefix 10*)
     pat = f"vllm-{rate}.0qps-*-{arm}-20260611-1[01]*.json" if arm != "tpt-class10-xxx" \
         else f"vllm-{rate}.0qps-*-{arm}-*.json"
-    paths = [p for p in glob.glob(os.path.join(RES, pat)) if "ood" not in p]
+    paths = [p for p in glob.glob(os.path.join(RES, pat)) if "ood" not in p and not p.endswith("-sanitized.json")]
     assert len(paths) == 1, f"{pat} -> {paths}"
     return load(os.path.basename(paths[0]))
 
 
 def ood(rate, arm):
-    # Map old arm names to the new Part 2 arm names
-    arm_map = {"opt-xxx": "ltr", "fcfs": "fcfs"}
-    arm_p2 = arm_map.get(arm, arm)
-    
-    # Try looking in p2/ for seed0 first
-    paths = glob.glob(os.path.join(RES, "p2", f"part2_r{rate}_{arm_p2}_seed0.json"))
-    if not paths:
-        paths = [p for p in glob.glob(os.path.join(RES, f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")) if "ablation" not in p]
+    paths = [p for p in glob.glob(os.path.join(RES, f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")) if "ablation" not in p and not p.endswith("-sanitized.json")]
     assert len(paths) >= 1, f"ood({rate}, {arm}) -> {paths}"
     # Use relpath so load() can find it correctly inside RES
     return load(os.path.relpath(paths[0], RES))
@@ -215,8 +208,9 @@ def main():
             "Latency CDF — in-distribution (LMSYS, rate 8)", "fig_cdf_indist_r8.png")
     fig_cdf(ood4f, ood4l,
             "Latency CDF — OOD (ShareGPT trace × LMSYS predictor, rate 4)", "fig_cdf_ood_r4.png")
-    fig_ood_mitigation()
-    fig_ood_survival()
+    # Disable hardcoded misleading charts per PR feedback
+    # fig_ood_mitigation()
+    # fig_ood_survival()
     print("ALL_CHARTS_DONE")
 
 

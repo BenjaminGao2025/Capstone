@@ -67,9 +67,13 @@ if [ ! -f "$SCRIPT_TO_RUN" ]; then
     exit 1
 fi
 
-# 7. For ltr/v1 arms, verify PREDICTOR is set
+# 7. For ltr/v1 arms, verify PREDICTOR is set and exists
 if [[ "$ARM" == "ltr" || "$ARM" == "v1" ]]; then
     : "${PREDICTOR?ERROR: PREDICTOR environment variable is required for $ARM arm}"
+    if [ ! -f "$PREDICTOR" ]; then
+        echo "ERROR: PREDICTOR file does not exist: $PREDICTOR" >&2
+        exit 1
+    fi
     export PREDICTOR
 fi
 
@@ -123,6 +127,40 @@ fi
 # 15. The single new JSON is the result
 RESULT_FILE="$NEW_JSONS"
 
+# 16. Python Validation
+echo "Validating result JSON..."
+python3 -c "
+import json, sys
+try:
+    with open('$RESULT_FILE', 'r') as f:
+        data = json.load(f)
+except Exception as e:
+    print('ERROR parsing JSON:', e, file=sys.stderr)
+    sys.exit(1)
+    
+req_rate = float(data.get('request_rate', -1))
+if abs(req_rate - float($REQUEST_RATE)) > 1e-5:
+    print('ERROR: request_rate mismatch', file=sys.stderr)
+    sys.exit(1)
+
+completed = data.get('completed', -1)
+if completed != int($NUM_PROMPTS):
+    print(f'ERROR: completed count {completed} != expected {int($NUM_PROMPTS)}', file=sys.stderr)
+    sys.exit(1)
+
+sched_type = data.get('schedule_type', '')
+arm = '$ARM'
+match = False
+if arm == 'fcfs' and sched_type == 'fcfs': match = True
+elif arm == 'ltr' and sched_type.startswith('opt-') and not sched_type.startswith('opt-aging-'): match = True
+elif arm == 'v1' and sched_type.startswith('opt-aging-'): match = True
+elif arm == sched_type: match = True
+
+if not match:
+    print(f'ERROR: schedule_type mismatch. ARM={arm}, json={sched_type}', file=sys.stderr)
+    sys.exit(1)
+" || exit 1
+
 # 17. Record metadata:
 RESULT_SHA=$(shasum -a 256 "$RESULT_FILE" | awk '{print $1}')
 
@@ -134,7 +172,14 @@ fi
 REPO_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# 18. Write experiment_manifest.json in the same directory
+# 18. Call the audit validator if available
+if command -v audit_validator >/dev/null 2>&1; then
+    audit_validator "$OUT_DIR" || { echo "ERROR: audit_validator failed" >&2; exit 1; }
+elif [ -f "scripts/audit_validator.sh" ]; then
+    bash scripts/audit_validator.sh "$OUT_DIR" || { echo "ERROR: audit_validator.sh failed" >&2; exit 1; }
+fi
+
+# 19. Write experiment_manifest.json ONLY after all passes
 cat <<EOF > "$OUT_DIR/experiment_manifest.json"
 {
     "phase": "$PHASE",
@@ -152,13 +197,6 @@ cat <<EOF > "$OUT_DIR/experiment_manifest.json"
     "eligible_for_aggregation": true
 }
 EOF
-
-# 19. Call the audit validator if available
-if command -v audit_validator >/dev/null 2>&1; then
-    audit_validator "$OUT_DIR" || echo "WARNING: audit_validator failed" >&2
-elif [ -f "scripts/audit_validator.sh" ]; then
-    bash scripts/audit_validator.sh "$OUT_DIR" || echo "WARNING: audit_validator failed" >&2
-fi
 
 echo "Experiment successful. Manifest and results written to $OUT_DIR."
 exit 0
