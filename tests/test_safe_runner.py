@@ -129,7 +129,7 @@ class TestSafeRunner(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
         with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
             manifest = json.load(f)
-            self.assertTrue(manifest["eligible_for_aggregation"])
+            self.assertTrue(manifest["eligible_for_public_submission"])
             self.assertEqual(manifest["status"], "success")
             self.assertEqual(manifest["seed_verification"], "verified_from_result")
 
@@ -145,7 +145,7 @@ class TestSafeRunner(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
         with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
             manifest = json.load(f)
-            self.assertTrue(manifest["eligible_for_aggregation"])
+            self.assertTrue(manifest["eligible_for_public_submission"])
             self.assertEqual(manifest["status"], "success")
             self.assertEqual(manifest["seed_verification"], "requested_only_not_embedded_in_result")
 
@@ -181,9 +181,9 @@ class TestSafeRunner(unittest.TestCase):
         
         with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
             manifest = json.load(f)
-            self.assertTrue(manifest["eligible_for_aggregation"])
+            self.assertTrue(manifest["eligible_for_public_submission"])
             self.assertEqual(manifest["status"], "success")
-            self.assertEqual(manifest["result_file"], "res_sanitized.json")
+            self.assertEqual(manifest["sanitized_result_file"], "res_sanitized.json")
 
 if __name__ == '__main__':
     unittest.main()
