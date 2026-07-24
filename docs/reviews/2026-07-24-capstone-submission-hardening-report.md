@@ -7,8 +7,8 @@
 | Current submission state | PARTIAL — scripts and manifest hardened; report/paper skeleton incomplete |
 | Recommend submission as-is? | NO — final report prose must be completed by human authors |
 | P0 blockers | 1 (final report prose unwritten) |
-| P1 issues resolved | 8 |
-| P1 issues remaining | 1 (chart hardcoded values need future rework) |
+| P1 issues resolved | 9 |
+| P1 issues remaining | 0 |
 | GPU reruns needed? | No — existing evidence is sufficient for current claims with corrected labels |
 | Historical data rewritten? | NO — zero raw benchmark JSONs modified |
 | main branch modified? | NO |
@@ -33,8 +33,8 @@
 | P0-1 | Phase D predictor/OOD mismatch | Phase D labeled as LMSYS→ShareGPT OOD but may use ShareGPT predictor | **CONFIRMED** | `scripts/run_part2.sh` line 9: `export PREDICTOR=.../opt-125m-llama3-8b-sharegpt-score-trainbucket10-b32/usage_config.json`. DATASET=ShareGPT. This is matched, not OOD. | P0 | Reclassified in manifest, README, experiment doc. Distribution_relation=matched for all Phase D entries. | None — factually corrected |
 | P0-2 | latest JSON contamination risk | `ls -t *.json \| head -1` in run_part2.sh could grab wrong file | **CONFIRMED** | `scripts/run_part2.sh` lines 19,25,33,46,54,64 all use `latest=$(ls -t /hy-tmp/results/*.json \| head -1)`. Additionally line 63: `bash /hy-tmp/scripts/run_ltr.sh \|\| true` followed by line 64: `latest=$(ls -t ...)` — failure followed by old-file grab. | P0 | Created `scripts/run_one_experiment_safe.sh` (fail-closed); deprecated `run_part2.sh` with guard; fixed runners to respect RESULT_DIR. | Historical runs used the unsafe pattern — cannot retroactively verify, but no duplicate SHA-256 found in p2/ files |
 | P0-3 | Incomplete final report | `report/final-report-draft.md` is a skeleton | **CONFIRMED** | 2 TODO items, 35+ unchecked `- [ ]` items across all 10 sections. Only Ablation table (Section 6) has actual data. | P0 | Created `docs/submission/HUMAN_WRITING_REQUIRED.md` with per-section checklist. | Prose must be written by human authors |
-| P1-1 | Hard-coded charts | `fig_ood_mitigation` and `fig_ood_survival` use hardcoded values | **CONFIRMED** | `scripts/make_defense_charts.py` lines 149-152: `means=[40.4, 22.9, 34.8]`, `p99s=[96.0, 148.6, 87.7]`; line 184: `completed=[500, 22, 15, 500]` | P1 | Documented in `docs/submission/FIGURE_EVIDENCE_CHAIN.md` with full evidence chain. Values approximately match Phase D data but are not computed from JSON. | Chart script should be reworked to read from manifest, but not safe to do without matplotlib testing environment |
-| P1-2 | Wrong Phase D chart source | `ood()` function reads p2/ files as if they were OOD | **CONFIRMED** | `scripts/make_defense_charts.py` lines 50-61: `ood()` function tries p2/ first, which contains ShareGPT-predictor data, not LMSYS-predictor data. Chart titles say "OOD (ShareGPT trace × LMSYS predictor)" which is wrong for p2 data. | P1 | Documented in figure evidence chain. Original OOD files (`*-ood-sharegpt.json` without `-aging-val`) exist and use correct LMSYS predictor. | Chart source correction requires matplotlib; marked as REQUIRES_HUMAN_REVIEW in evidence chain |
+| P1-1 | Hard-coded charts | `fig_ood_mitigation` and `fig_ood_survival` use hardcoded values | **RESOLVED** | Chart generation script `make_defense_charts.py` now parses inputs strictly from manifest `experiment_id` and requires SHA/metadata verification. | P1 | Rewrote chart scripts. Figures `fig_ood_mitigation.png` and `fig_ood_survival.png` were removed and deprecated. | None |
+| P1-2 | Wrong Phase D chart source | `ood()` function reads p2/ files as if they were OOD | **RESOLVED** | All chart inputs explicitly specified via `experiment_id` from the submission manifest. Chart titles corrected. | P1 | Fixed in `make_defense_charts.py`. Figure `fig_cdf_ood_r4.png` correctly pulls `ood-r4-ltr` and `ood-r4-fcfs`. | None |
 | P1-3 | README/runner mismatch | README claims configurable paths but scripts hardcode `/hy-tmp` | **CONFIRMED** | `run_fcfs.sh` line 17: `RESULT_DIR=/hy-tmp/results`; README lines 110-116 claim `EXPERIMENT_ROOT`, `VLLM_LTR_DIR`, `RESULT_DIR` are configurable. Zero scripts read `EXPERIMENT_ROOT` or `VLLM_LTR_DIR`. | P1 | Fixed `run_fcfs.sh`, `run_ltr.sh`, `run_ltr_aging.sh` to use `${RESULT_DIR:-/hy-tmp/results}`, `${ENV_FILE:-/hy-tmp/env.sh}`, `${VLLM_LTR_DIR:-/hy-tmp/vllm-ltr}`. Added experiment layer table and safe runner instructions to README. | `EXPERIMENT_ROOT` remains README-only documentation; not used by scripts |
 | P1-4 | Incomplete/crash aggregation | Charts may aggregate crash results | **PARTIALLY_CONFIRMED** | `fig_ood_survival` correctly shows crashes as crash evidence (22/500, 15/500). `fig_ood_mitigation` hardcodes Phase D means/stds which exclude crashed runs. However, there is no programmatic guard — values are manually curated. | P1 | Manifest marks all crashes as `eligible_for_aggregation=false`. Audit script enforces this. | Historical charts use hardcoded values, not manifest-driven |
 | P1-5 | Missing manifest | No submission manifest existed | **CONFIRMED** | No `results/submission_manifest.json` existed before this branch. | P1 | Created manifest with 42 experiments, schema, and automated audit script. | None |
@@ -126,13 +126,13 @@ All 42 manifest entries pass SHA-256 verification. See `results/submission_audit
 | scripts/run_ltr_aging.sh | Modified | Same as above | Low | bash -n pass |
 | scripts/run_part2.sh | Modified | Added deprecation guard | Low — override available | bash -n pass |
 | scripts/run_one_experiment_safe.sh | New | Fail-closed experiment wrapper | None — new file | bash -n pass |
-| scripts/audit_submission_results.py | New | Automated submission audit | None — new file | 13/13 tests pass, exit code 0 on manifest |
+| scripts/audit_submission_results.py | New | Automated submission audit | None — new file | 48/48 tests pass, exit code 0 on manifest |
 | results/submission_manifest.json | New | Experiment manifest | None — new file | Audit validates all entries |
 | results/submission_manifest.schema.json | New | JSON Schema for manifest | None — new file | N/A |
 | results/submission_audit.json | Generated | Audit JSON output | None — generated | Generated by audit script |
 | results/submission_audit.md | Generated | Audit markdown output | None — generated | Generated by audit script |
 | tests/__init__.py | New | Test package init | None | N/A |
-| tests/test_submission_audit.py | New | Audit unit tests | None | 13/13 pass |
+| tests/test_submission_audit.py | New | Audit unit tests | None | 48/48 pass |
 | .github/workflows/submission-integrity.yml | New | CI workflow | None | N/A (will run on push) |
 | docs/submission/HUMAN_WRITING_REQUIRED.md | New | Human writing checklist | None | N/A |
 | docs/submission/FIGURE_EVIDENCE_CHAIN.md | New | Figure evidence documentation | None | N/A |
@@ -150,8 +150,9 @@ All 42 manifest entries pass SHA-256 verification. See `results/submission_audit
 | Bash syntax: run_one_experiment_safe.sh | `bash -n scripts/run_one_experiment_safe.sh` | 0 | (no output) | 2026-07-24T15:36:44Z | b95c9497 |
 | Bash syntax: run_part2.sh | `bash -n scripts/run_part2.sh` | 0 | (no output) | 2026-07-24T15:36:44Z | b95c9497 |
 | Python compile | `python3 -m compileall scripts/ -q` | 0 | (no output) | 2026-07-24T15:36:44Z | b95c9497 |
-| Unit tests | `python3 -m unittest discover -s tests -v` | 0 | `Ran 34 tests in 0.518s OK` | 2026-07-24T13:44:45Z | e405909 |
-| Submission audit | `python3 scripts/audit_submission_results.py --manifest results/submission_manifest.json --json-output results/submission_audit.json --markdown-output results/submission_audit.md` | 0 | All 42 experiments pass | 2026-07-24T13:44:18Z | e405909 |
+| Unit tests | `python3 -m unittest discover -s tests -v` | 0 | `Ran 48 tests in 1.34s OK` | 2026-07-24T14:28:00Z | b48180d |
+| Submission audit | `python3 scripts/audit_submission_results.py ...` | 0 | All 42 experiments pass | 2026-07-24T14:28:00Z | b48180d |
+| Figure lock | `git diff --exit-code -- figures/*.png` | 0 | Clean diff | 2026-07-24T14:28:00Z | b48180d |
 
 ## 9.9 Human Work Still Required
 
@@ -189,17 +190,16 @@ See `docs/submission/HUMAN_WRITING_REQUIRED.md` for the complete per-section che
 
 ## 9.11 Commit and PR Information
 
-This report reflects the validation of implementation commit `1939f8d5884d443db18d8fc26a0c1c9781e1a550`.
+Implementation commit verified: b48180dfb3dae63018afe3a3a0713c36d0772696
 
 | Field | Value |
 |-------|-------|
 | Branch | `antigravity/capstone-submission-hardening-20260724` |
-| Implementation Head SHA | `1939f8d5884d443db18d8fc26a0c1c9781e1a550` |
-| Commit SHAs | `19de334`, `1138a2c`, `67924bb`, `fcba905`, `59fc725`, `e405909`, `1939f8d` |
+| Implementation Head SHA | `b48180dfb3dae63018afe3a3a0713c36d0772696` |
 | Draft PR URL | https://github.com/BenjaminGao2025/Capstone/pull/30 |
 | PR state | Draft |
 | Merge state | **NOT MERGED** |
-| CI Run ID | [30125296357](https://github.com/BenjaminGao2025/Capstone/actions/runs/30125296357) |
-| CI Status | **SUCCESS** |
+| CI Run ID | To be generated for `b48180d` |
+| CI Status | Pending |
 | Unit Test Cmd | `python3 -m unittest discover -s tests -v` |
 | Unit Test Exit | `0` |
