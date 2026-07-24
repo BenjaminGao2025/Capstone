@@ -150,8 +150,8 @@ All 42 manifest entries pass SHA-256 verification. See `results/submission_audit
 | Bash syntax: run_one_experiment_safe.sh | `bash -n scripts/run_one_experiment_safe.sh` | 0 | (no output) | 2026-07-24T15:36:44Z | b95c9497 |
 | Bash syntax: run_part2.sh | `bash -n scripts/run_part2.sh` | 0 | (no output) | 2026-07-24T15:36:44Z | b95c9497 |
 | Python compile | `python3 -m compileall scripts/ -q` | 0 | (no output) | 2026-07-24T15:36:44Z | b95c9497 |
-| Unit tests | `python3 -m unittest discover -s tests -v` | 0 | `Ran 13 tests in 0.051s OK` | 2026-07-24T15:36:38Z | b95c9497 |
-| Submission audit | `python3 scripts/audit_submission_results.py --manifest results/submission_manifest.json --json-output results/submission_audit.json --markdown-output results/submission_audit.md` | 0 | All 42 experiments pass | 2026-07-24T15:36:29Z | b95c9497 |
+| Unit tests | `python3 -m unittest discover -s tests -v` | 0 | `Ran 34 tests in 0.518s OK` | 2026-07-24T13:44:45Z | e405909 |
+| Submission audit | `python3 scripts/audit_submission_results.py --manifest results/submission_manifest.json --json-output results/submission_audit.json --markdown-output results/submission_audit.md` | 0 | All 42 experiments pass | 2026-07-24T13:44:18Z | e405909 |
 
 ## 9.9 Human Work Still Required
 
@@ -194,9 +194,12 @@ To be updated after commits are made.
 | Field | Value |
 |-------|-------|
 | Branch | `antigravity/capstone-submission-hardening-20260724` |
-| Commit SHAs | `19de334`, `1138a2c`, `67924bb`, `fcba905` |
+| Head SHA | `e4059095a85e8769b2bf800598a6879cf6b928d8` |
+| Commit SHAs | `19de334`, `1138a2c`, `67924bb`, `fcba905`, `59fc725`, `e405909` |
 | Draft PR URL | https://github.com/BenjaminGao2025/Capstone/pull/30 |
 | PR state | Draft |
 | Merge state | **NOT MERGED** |
-| CI Run ID | [30115780470](https://github.com/BenjaminGao2025/Capstone/actions/runs/30115780470) |
+| CI Run ID | [30115861644](https://github.com/BenjaminGao2025/Capstone/actions/runs/30115861644) |
 | CI Status | **SUCCESS** |
+| Unit Test Cmd | `python3 -m unittest discover -s tests -v` |
+| Unit Test Exit | `0` |
