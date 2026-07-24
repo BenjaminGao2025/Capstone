@@ -38,7 +38,7 @@
 | P1-3 | README/runner mismatch | README claims configurable paths but scripts hardcode `/hy-tmp` | **CONFIRMED** | `run_fcfs.sh` line 17: `RESULT_DIR=/hy-tmp/results`; README lines 110-116 claim `EXPERIMENT_ROOT`, `VLLM_LTR_DIR`, `RESULT_DIR` are configurable. Zero scripts read `EXPERIMENT_ROOT` or `VLLM_LTR_DIR`. | P1 | Fixed `run_fcfs.sh`, `run_ltr.sh`, `run_ltr_aging.sh` to use `${RESULT_DIR:-/hy-tmp/results}`, `${ENV_FILE:-/hy-tmp/env.sh}`, `${VLLM_LTR_DIR:-/hy-tmp/vllm-ltr}`. Added experiment layer table and safe runner instructions to README. | `EXPERIMENT_ROOT` remains README-only documentation; not used by scripts |
 | P1-4 | Incomplete/crash aggregation | Charts may aggregate crash results | **PARTIALLY_CONFIRMED** | `fig_ood_survival` correctly shows crashes as crash evidence (22/500, 15/500). `fig_ood_mitigation` hardcodes Phase D means/stds which exclude crashed runs. However, there is no programmatic guard — values are manually curated. | P1 | Manifest marks all crashes as `eligible_for_aggregation=false`. Audit script enforces this. | Historical charts use hardcoded values, not manifest-driven |
 | P1-5 | Missing manifest | No submission manifest existed | **CONFIRMED** | No `results/submission_manifest.json` existed before this branch. | P1 | Created manifest with 42 experiments, schema, and automated audit script. | None |
-| P1-6 | Missing CI | No GitHub Actions workflow | **CONFIRMED** | No `.github/` directory existed. | P1 | Created `.github/workflows/submission-integrity.yml` with non-GPU checks. | CI not yet run on GitHub — will execute on push |
+| P1-6 | Missing CI | No GitHub Actions workflow | **CONFIRMED** | No `.github/` directory existed. | P1 | Created `.github/workflows/submission-integrity.yml` with non-GPU checks. | CI passed successfully (Run ID: 30115780470) |
 | P1-7 | generated_texts/secret hygiene | JSON files may contain generated text or secrets | **CONFIRMED (generated_texts) / NOT_CONFIRMED (secrets)** | 50 files contain `generated_texts`. Zero files contain secret-like patterns in code/docs/scripts. Phase D p2/ files already had generated_texts stripped. | P1 | Audit script warns on generated_texts presence. No secrets found to remediate. | 50 files in main results still contain generated_texts — these are the original run outputs and must not be modified |
 | P2-1 | Duplicate backup handling | PR #29 handles exact duplicates | **CONFIRMED** | Branch `origin/agent/cleanup-exact-backup-duplicates` exists. Not merged to main. | P2 | Not addressed — isolated in PR #29 per instructions. | Exact duplicate cleanup is handled separately by PR #29 |
 | P2-2 | Repository clutter | Multiple backup/server files | N/A | server_backup/ contains historical run artifacts. | P2 | Not addressed — these are historical evidence. | None |
@@ -194,7 +194,9 @@ To be updated after commits are made.
 | Field | Value |
 |-------|-------|
 | Branch | `antigravity/capstone-submission-hardening-20260724` |
-| Commit SHAs | (to be filled after commit) |
-| Draft PR URL | (to be filled after push) |
+| Commit SHAs | `19de334`, `1138a2c`, `67924bb`, `fcba905` |
+| Draft PR URL | https://github.com/BenjaminGao2025/Capstone/pull/30 |
 | PR state | Draft |
 | Merge state | **NOT MERGED** |
+| CI Run ID | [30115780470](https://github.com/BenjaminGao2025/Capstone/actions/runs/30115780470) |
+| CI Status | **SUCCESS** |
