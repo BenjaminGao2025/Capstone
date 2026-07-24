@@ -5,6 +5,7 @@ import tempfile
 import subprocess
 import shutil
 from pathlib import Path
+from scripts.audit_submission_results import audit_manifest, validate_path_safety
 
 # Import the script to test functions directly
 import sys
@@ -352,6 +353,15 @@ class TestSubmissionAudit(unittest.TestCase):
         res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
         self.assertTrue(res["has_blockers"])
         self.assertTrue(any("Invalid/unsafe path for original_result_path" in e for e in res["results"][0]["errors"]))
+
+    def test_22_validate_path_safety_extensions(self):
+        self.assertFalse(validate_path_safety("C:\\Windows\\file", self.repo_root))
+        self.assertFalse(validate_path_safety("C:/Windows/file", self.repo_root))
+        self.assertFalse(validate_path_safety("\\\\server\\share", self.repo_root))
+        self.assertFalse(validate_path_safety("//server/share", self.repo_root))
+        self.assertFalse(validate_path_safety("/etc/passwd", self.repo_root))
+        self.assertFalse(validate_path_safety("folder\\..\\outside.json", self.repo_root))
+        self.assertFalse(validate_path_safety("..\\outside.json", self.repo_root))
 
     def test_cli(self):
         res_path = os.path.join(self.repo_root, "exp1.json")

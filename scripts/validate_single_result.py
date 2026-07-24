@@ -43,9 +43,12 @@ def main():
         print("ERROR: JSON is not an object", file=sys.stderr)
         sys.exit(1)
         
+    has_generated_texts = False
+    eligible_for_public = True
+
     if "generated_texts" in data:
-        print("ERROR: generated_texts must not be present in public results", file=sys.stderr)
-        sys.exit(1)
+        has_generated_texts = True
+        eligible_for_public = False
         
     req_rate = float(data.get("request_rate", -1))
     if abs(req_rate - args.request_rate) > 1e-5:
@@ -87,19 +90,27 @@ def main():
         sys.exit(1)
 
     # optional seed check
+    has_seed = False
     if "seed" in data:
+        has_seed = True
         actual_seed = data["seed"]
         if actual_seed != args.expected_seed:
             print(f"ERROR: seed {actual_seed} != expected {args.expected_seed}", file=sys.stderr)
             sys.exit(1)
-    # If seed not in data, we pass, but the caller handles writing proper manifest sidecar info
 
     # secret-like pattern scan
     if check_secrets_stream(result_file):
         print("ERROR: Secret-like string detected in result file", file=sys.stderr)
         sys.exit(1)
 
-    print("VALIDATION SUCCESS")
+    sidecar = {
+        "contains_generated_texts": has_generated_texts,
+        "eligible_for_public_submission": eligible_for_public,
+        "has_seed": has_seed
+    }
+    
+    # Output structured JSON sidecar to stdout
+    print(json.dumps(sidecar))
     sys.exit(0)
 
 if __name__ == "__main__":

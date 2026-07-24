@@ -22,7 +22,7 @@ class TestChartProvenance(unittest.TestCase):
         make_defense_charts.REPO_ROOT = self.temp_dir
         
         self.result_path = os.path.join(self.temp_dir, "test.json")
-        self.result_data = json.dumps({"ttfts": [0.1], "itls": [[0.1]], "mean_ttft_ms": 100.0, "schedule_type": "fcfs"})
+        self.result_data = json.dumps({"ttfts": [0.1], "itls": [[0.1]], "mean_ttft_ms": 100.0, "schedule_type": "fcfs", "request_rate": 4.0, "completed": 1})
         with open(self.result_path, "w") as f:
             f.write(self.result_data)
         
@@ -36,7 +36,10 @@ class TestChartProvenance(unittest.TestCase):
                     "status": "valid",
                     "result_path": "test.json",
                     "result_sha256": self.result_sha,
-                    "arm": "fcfs"
+                    "arm": "fcfs",
+                    "request_rate": 4.0,
+                    "completed": 1,
+                    "expected_num_prompts": 1
                 }
             ]
         }

@@ -78,6 +78,9 @@ def get_experiment_data(exp_id):
     with open(path) as f:
         d = json.load(f)
         
+    if not isinstance(d, dict):
+        raise RuntimeError(f"Result JSON is not an object for ID: {exp_id}")
+        
     # JSON metadata consistency check
     manifest_arm = exp.get("arm")
     json_sched = d.get("schedule_type", "")
@@ -96,6 +99,21 @@ def get_experiment_data(exp_id):
         
     if not arm_matches:
         raise RuntimeError(f"Wrong scheduler for ID: {exp_id}, JSON has {json_sched}, manifest arm is {manifest_arm}")
+        
+    if "request_rate" in d and abs(d["request_rate"] - exp.get("request_rate", -1)) > 1e-5:
+        raise RuntimeError(f"request_rate mismatch for ID: {exp_id}")
+        
+    if d.get("completed") != exp.get("completed"):
+        raise RuntimeError(f"completed count mismatch for ID: {exp_id}")
+        
+    if exp.get("eligible_for_aggregation") and d.get("completed") != exp.get("expected_num_prompts"):
+        raise RuntimeError(f"completed != expected_num_prompts for ID: {exp_id}")
+        
+    if len(d.get("ttfts", [])) != d.get("completed", -1):
+        raise RuntimeError(f"len(ttfts) mismatch for ID: {exp_id}")
+        
+    if len(d.get("itls", [])) != d.get("completed", -1):
+        raise RuntimeError(f"len(itls) mismatch for ID: {exp_id}")
         
     lat = np.sort([t + sum(i) for t, i in zip(d["ttfts"], d["itls"])])
     return {

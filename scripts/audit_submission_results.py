@@ -98,6 +98,24 @@ def validate_schema(manifest, repo_root):
 def validate_path_safety(path_str, repo_root):
     if not path_str:
         return True
+    
+    # Reject backslashes (Windows-style or escaping abuse)
+    if '\\' in path_str:
+        return False
+        
+    # Reject absolute POSIX paths
+    if path_str.startswith('/'):
+        return False
+        
+    # Reject Windows drive letters and UNC paths
+    if re.match(r'^[a-zA-Z]:', path_str):
+        return False
+        
+    # Reject obvious traversal parts
+    parts = path_str.split('/')
+    if '..' in parts or '.' in parts:
+        return False
+
     try:
         p = pathlib.Path(repo_root) / path_str
         return p.resolve().is_relative_to(pathlib.Path(repo_root).resolve())

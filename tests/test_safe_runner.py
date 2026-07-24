@@ -61,6 +61,11 @@ class TestSafeRunner(unittest.TestCase):
         res = self.run_safe_runner()
         self.assertNotEqual(res.returncode, 0)
         self.assertIn("Invalid characters or values", res.stderr)
+        
+        self.env["REQUEST_RATE"] = "0"
+        res = self.run_safe_runner()
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("REQUEST_RATE must be > 0", res.stderr)
 
     def test_03_nonempty_directory(self):
         out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
@@ -93,7 +98,7 @@ class TestSafeRunner(unittest.TestCase):
         self.write_mock_runner("#!/bin/bash\necho '{' > \"$RESULT_DIR/res.json\"\n")
         res = self.run_safe_runner()
         self.assertNotEqual(res.returncode, 0)
-        self.assertIn("Failed to parse JSON", res.stderr)
+        self.assertIn("Validation failed", res.stderr)
 
     def test_07_incomplete_completed(self):
         self.write_mock_runner(
@@ -156,6 +161,29 @@ class TestSafeRunner(unittest.TestCase):
         )
         res = self.run_safe_runner()
         self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
+
+    def test_12_raw_generated_texts_sanitization(self):
+        self.write_mock_runner(
+            "#!/bin/bash\n"
+            "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'fcfs', 'seed': 0, 'ttfts': [0]*500, 'itls': [0]*500, 'generated_texts': ['bad text']}))\"\n"
+        )
+        res = self.run_safe_runner()
+        self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
+        
+        out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
+        
+        self.assertTrue(os.path.exists(os.path.join(out_dir, "res.json")))
+        self.assertTrue(os.path.exists(os.path.join(out_dir, "res_sanitized.json")))
+        
+        with open(os.path.join(out_dir, "res_sanitized.json")) as f:
+            sanitized = json.load(f)
+            self.assertNotIn("generated_texts", sanitized)
+        
+        with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
+            manifest = json.load(f)
+            self.assertTrue(manifest["eligible_for_aggregation"])
+            self.assertEqual(manifest["status"], "success")
+            self.assertEqual(manifest["result_file"], "res_sanitized.json")
 
 if __name__ == '__main__':
     unittest.main()
