@@ -13,7 +13,7 @@
 #   OUTPUT_LEN=-1 NUM_PROMPTS=500 AGING_GATE_S=120 \
 #   bash run_ltr_aging.sh
 set -e
-source /hy-tmp/env.sh
+source "${ENV_FILE:-/hy-tmp/env.sh}"
 
 MODEL="${MODEL:-facebook/opt-1.3b}"
 TOKENIZER="${TOKENIZER:-$MODEL}"
@@ -25,14 +25,14 @@ SEED="${SEED:-0}"
 SWAP_SPACE="${SWAP_SPACE:-8}"     # cgroup RAM limit is 23GiB — do not raise blindly
 PORT="${PORT:-3343}"
 PREDICTOR="${PREDICTOR:-MODEL/results/opt-125m-llama3-8b-lmsys-score-trainbucket10-b32/usage_config.json}"
-RESULT_DIR=/hy-tmp/results
+RESULT_DIR="${RESULT_DIR:-/hy-tmp/results}"
 SCHED=opt-aging-xxx
 AGING_GATE_S="${AGING_GATE_S:-120}"
 export AGING_GATE_S
 MAXLEN_ARG=""
 [ -n "$MAX_MODEL_LEN" ] && MAXLEN_ARG="--max-model-len $MAX_MODEL_LEN"
 
-cd /hy-tmp/vllm-ltr/benchmarks
+cd "${VLLM_LTR_DIR:-/hy-tmp/vllm-ltr}/benchmarks"
 mkdir -p "$RESULT_DIR"
 
 echo "=== LTR+aging: AGING_GATE_S=${AGING_GATE_S}s, sched=$SCHED ==="
