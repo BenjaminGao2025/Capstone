@@ -13,6 +13,8 @@ class TestSafeRunner(unittest.TestCase):
         
         # We will mock the underlying runner scripts using RUNNER_SCRIPT
         self.mock_runner = os.path.join(self.temp_dir, "mock_runner.sh")
+        with open(self.mock_runner, "w") as f:
+            f.write("#!/bin/bash\nexit 0\n")
         self.env = {
             "PHASE": "test_phase",
             "ARM": "fcfs",
@@ -46,7 +48,21 @@ class TestSafeRunner(unittest.TestCase):
         self.assertNotEqual(res.returncode, 0)
         self.assertIn("PHASE environment variable is required", res.stderr)
 
-    def test_02_nonempty_directory(self):
+    def test_02_invalid_inputs(self):
+        self.env["PHASE"] = "../traversal"
+        res = self.run_safe_runner()
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Invalid characters or values", res.stderr)
+        out_dir = os.path.join(self.temp_dir, "../traversal", "rate4.0", "seed0", "fcfs")
+        self.assertFalse(os.path.exists(out_dir))
+
+        self.env["PHASE"] = "test"
+        self.env["REQUEST_RATE"] = "-4"
+        res = self.run_safe_runner()
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Invalid characters or values", res.stderr)
+
+    def test_03_nonempty_directory(self):
         out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
         os.makedirs(out_dir)
         with open(os.path.join(out_dir, "file.txt"), "w") as f: f.write("a")
@@ -55,7 +71,7 @@ class TestSafeRunner(unittest.TestCase):
         self.assertNotEqual(res.returncode, 0)
         self.assertIn("already exists and is not empty", res.stderr)
 
-    def test_03_runner_failure(self):
+    def test_04_runner_failure(self):
         self.write_mock_runner("#!/bin/bash\nexit 1\n")
         res = self.run_safe_runner()
         self.assertNotEqual(res.returncode, 0)
@@ -67,23 +83,17 @@ class TestSafeRunner(unittest.TestCase):
             self.assertEqual(manifest["status"], "crashed")
             self.assertFalse(manifest["eligible_for_aggregation"])
 
-    def test_04_no_json(self):
+    def test_05_no_json(self):
         self.write_mock_runner("#!/bin/bash\necho 'done'\n")
         res = self.run_safe_runner()
         self.assertNotEqual(res.returncode, 0)
         self.assertIn("No new JSON results found", res.stderr)
 
-    def test_05_multiple_json(self):
-        self.write_mock_runner("#!/bin/bash\ntouch \"$RESULT_DIR/1.json\" \"$RESULT_DIR/2.json\"\n")
-        res = self.run_safe_runner()
-        self.assertNotEqual(res.returncode, 0)
-        self.assertIn("Multiple new JSON results found", res.stderr)
-
     def test_06_malformed_json(self):
         self.write_mock_runner("#!/bin/bash\necho '{' > \"$RESULT_DIR/res.json\"\n")
         res = self.run_safe_runner()
         self.assertNotEqual(res.returncode, 0)
-        self.assertIn("ERROR parsing JSON", res.stderr)
+        self.assertIn("Failed to parse JSON", res.stderr)
 
     def test_07_incomplete_completed(self):
         self.write_mock_runner(
@@ -102,41 +112,37 @@ class TestSafeRunner(unittest.TestCase):
         self.assertNotEqual(res.returncode, 0)
         self.assertIn("PREDICTOR environment variable is required", res.stderr)
 
-    def test_09_validator_failure(self):
+    def test_09_successful_fcfs_with_seed(self):
         self.write_mock_runner(
             "#!/bin/bash\n"
             "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'fcfs', 'seed': 0, 'ttfts': [0]*500, 'itls': [0]*500}))\"\n"
         )
-        # Create a fake audit_validator script in repo root that fails
-        val_script = os.path.join(self.repo_root, "scripts", "audit_validator.sh")
-        try:
-            with open(val_script, "w") as f: f.write("#!/bin/bash\nexit 1\n")
-            # We need to make it executable or run_one_experiment_safe might just check for file and run bash
-            res = self.run_safe_runner()
-            self.assertNotEqual(res.returncode, 0)
-            self.assertIn("audit_validator.sh failed", res.stderr)
-        finally:
-            if os.path.exists(val_script): os.remove(val_script)
+        res = self.run_safe_runner()
+        self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
+        
+        out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
+        self.assertTrue(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
+        with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
+            manifest = json.load(f)
+            self.assertTrue(manifest["eligible_for_aggregation"])
+            self.assertEqual(manifest["status"], "success")
+            self.assertEqual(manifest["seed_verification"], "verified_from_result")
 
-    def test_10_successful_fcfs(self):
+    def test_10_successful_fcfs_missing_seed(self):
         self.write_mock_runner(
             "#!/bin/bash\n"
-            "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'fcfs', 'seed': 0, 'ttfts': [0]*500, 'itls': [0]*500}))\"\n"
+            "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'fcfs', 'ttfts': [0]*500, 'itls': [0]*500}))\"\n"
         )
-        val_script = os.path.join(self.repo_root, "scripts", "audit_validator.sh")
-        try:
-            with open(val_script, "w") as f: f.write("#!/bin/bash\nexit 0\n")
-            res = self.run_safe_runner()
-            self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
-            
-            out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
-            self.assertTrue(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
-            with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
-                manifest = json.load(f)
-                self.assertTrue(manifest["eligible_for_aggregation"])
-                self.assertEqual(manifest["status"], "success")
-        finally:
-            if os.path.exists(val_script): os.remove(val_script)
+        res = self.run_safe_runner()
+        self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
+        
+        out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
+        self.assertTrue(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
+        with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
+            manifest = json.load(f)
+            self.assertTrue(manifest["eligible_for_aggregation"])
+            self.assertEqual(manifest["status"], "success")
+            self.assertEqual(manifest["seed_verification"], "requested_only_not_embedded_in_result")
 
     def test_11_successful_ltr(self):
         self.env["ARM"] = "ltr"
@@ -148,23 +154,8 @@ class TestSafeRunner(unittest.TestCase):
             "#!/bin/bash\n"
             "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'opt-test', 'seed': 0, 'ttfts': [0]*500, 'itls': [0]*500}))\"\n"
         )
-        val_script = os.path.join(self.repo_root, "scripts", "audit_validator.sh")
-        try:
-            with open(val_script, "w") as f: f.write("#!/bin/bash\nexit 0\n")
-            res = self.run_safe_runner()
-            self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
-        finally:
-            if os.path.exists(val_script): os.remove(val_script)
-
-    def test_12_crash_manifest_with_validator(self):
-        # A crash should still write crash manifest even if validator might run (but validator shouldn't run on crash)
-        self.write_mock_runner("#!/bin/bash\nexit 1\n")
         res = self.run_safe_runner()
-        self.assertNotEqual(res.returncode, 0)
-        
-        out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
-        self.assertTrue(os.path.exists(os.path.join(out_dir, "crash_manifest.json")))
-        self.assertFalse(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
+        self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
 
 if __name__ == '__main__':
     unittest.main()

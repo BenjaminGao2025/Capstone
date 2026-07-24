@@ -11,11 +11,13 @@ Run from repo root:  python3 scripts/make_defense_charts.py
 """
 import json
 import os
+import hashlib
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import pathlib
 
 # Find repo root to resolve relative paths
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,10 +29,74 @@ RATES = [2, 4, 8, 16, 32]
 with open(MANIFEST_PATH) as f:
     manifest = json.load(f)
 
-def load(rel_path):
+def hash_file(filepath):
+    sha256 = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+def get_experiment_data(exp_id):
+    matching_exps = [e for e in manifest.get("experiments", []) if e.get("experiment_id") == exp_id]
+    if len(matching_exps) == 0:
+        raise RuntimeError(f"Missing experiment ID: {exp_id}")
+    if len(matching_exps) > 1:
+        raise RuntimeError(f"Duplicate experiment ID: {exp_id}")
+        
+    exp = matching_exps[0]
+    
+    if not exp.get("eligible_for_aggregation"):
+        raise RuntimeError(f"Ineligible ID: {exp_id}")
+        
+    if exp.get("status") != "valid":
+        raise RuntimeError(f"Status not valid for ID: {exp_id}")
+        
+    rel_path = exp.get("result_path")
+    if not rel_path:
+        raise RuntimeError(f"Missing result_path for ID: {exp_id}")
+        
+    # Check path containment
+    p = pathlib.Path(REPO_ROOT) / rel_path
+    try:
+        resolved_p = p.resolve()
+        resolved_root = pathlib.Path(REPO_ROOT).resolve()
+    except Exception:
+        raise RuntimeError(f"Path resolution error for ID: {exp_id}")
+        
+    if not resolved_p.is_relative_to(resolved_root):
+        raise RuntimeError(f"Unsafe path traversal for ID: {exp_id}")
+        
     path = os.path.join(REPO_ROOT, rel_path)
+    if not os.path.exists(path):
+        raise RuntimeError(f"Missing result file for ID: {exp_id}")
+        
+    # SHA verification
+    actual_sha = hash_file(path)
+    if actual_sha != exp.get("result_sha256"):
+        raise RuntimeError(f"SHA mismatch for ID: {exp_id}")
+        
     with open(path) as f:
         d = json.load(f)
+        
+    # JSON metadata consistency check
+    manifest_arm = exp.get("arm")
+    json_sched = d.get("schedule_type", "")
+    
+    arm_matches = False
+    manifest_sched = exp.get("scheduler_type")
+    if manifest_sched and json_sched:
+        arm_matches = (manifest_sched == json_sched)
+    if not arm_matches and json_sched:
+        if manifest_arm == "fcfs" and json_sched == "fcfs": arm_matches = True
+        elif manifest_arm == "ltr" and json_sched.startswith("opt-") and not json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm == "v1" and json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm.startswith("opt-aging-") and json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm.startswith("opt-") and not manifest_arm.startswith("opt-aging-") and json_sched.startswith("opt-") and not json_sched.startswith("opt-aging-"): arm_matches = True
+        elif manifest_arm == json_sched: arm_matches = True
+        
+    if not arm_matches:
+        raise RuntimeError(f"Wrong scheduler for ID: {exp_id}, JSON has {json_sched}, manifest arm is {manifest_arm}")
+        
     lat = np.sort([t + sum(i) for t, i in zip(d["ttfts"], d["itls"])])
     return {
         "lat": lat,
@@ -39,39 +105,6 @@ def load(rel_path):
         "p99_lat": float(np.percentile(lat, 99)),
         "tau": d.get("aux_kendall_tau"),
     }
-
-def find_experiment(phase, rate, arm, relation):
-    for exp in manifest.get("experiments", []):
-        if not exp.get("eligible_for_aggregation"):
-            continue
-        if exp.get("phase") != phase:
-            continue
-        if exp.get("request_rate") != rate:
-            continue
-        if exp.get("distribution_relation") != relation:
-            continue
-            
-        exp_arm = exp.get("arm")
-        target_arm = arm
-        
-        # We need to map script names to manifest names.
-        if target_arm == "fcfs" and exp_arm == "fcfs":
-            return load(exp.get("result_path"))
-        elif target_arm == "opt-xxx" and exp_arm == "ltr":
-            return load(exp.get("result_path"))
-        elif target_arm == "tpt-class10-xxx" and exp_arm == "cls":
-            return load(exp.get("result_path"))
-
-    raise RuntimeError(f"Could not find eligible experiment for phase={phase}, rate={rate}, arm={arm}, relation={relation}")
-
-def indist(rate, arm):
-    # 'sweep' phase in manifest corresponds to the indist sweeps
-    return find_experiment("sweep", rate, arm, "in_distribution")
-
-def ood(rate, arm):
-    # 'ood_characterization' phase corresponds to the true OOD Phase C tests
-    relation = "ood" if arm != "fcfs" else "in_distribution"
-    return find_experiment("ood_characterization", rate, arm, relation)
 
 
 def fig_motivation(ind4f, ind4l, ood4f, ood4l):
@@ -111,7 +144,7 @@ def fig_motivation(ind4f, ind4l, ood4f, ood4l):
              "(FCFS completes 500/500 on the identical workload).",
              ha="center", fontsize=9.5, style="italic", color="#c62828")
     fig.tight_layout(rect=[0, 0.05, 1, 1])
-    fig.savefig(f"{OUT}/fig_motivation.png", dpi=180)
+    fig.savefig(f"{OUT}/fig_motivation.png", dpi=180, metadata={'Date': None})
     print(f"saved {OUT}/fig_motivation.png")
 
 
@@ -137,7 +170,7 @@ def fig_main(sweep):
     axes[1].set_title("Llama-3-8B-Instruct, LMSYS trace, 500 prompts")
     fig.suptitle("In-distribution reproduction: LTR vs FCFS", fontsize=13, fontweight="bold")
     fig.tight_layout()
-    fig.savefig(f"{OUT}/fig_ttft_vs_rate.png", dpi=180)
+    fig.savefig(f"{OUT}/fig_ttft_vs_rate.png", dpi=180, metadata={'Date': None})
     print(f"saved {OUT}/fig_ttft_vs_rate.png")
 
 
@@ -152,27 +185,22 @@ def fig_cdf(f, l, title, fname):
     ax.grid(alpha=0.3)
     ax.legend(loc="lower right")
     fig.tight_layout()
-    fig.savefig(f"{OUT}/{fname}", dpi=180)
+    fig.savefig(f"{OUT}/{fname}", dpi=180, metadata={'Date': None})
     print(f"saved {OUT}/{fname}")
-
-
-def fig_ood_mitigation():
-    raise RuntimeError("Deprecated: OOD data was found to be from the matched ShareGPT distribution instead of true OOD.")
-
-
-def fig_ood_survival():
-    raise RuntimeError("Deprecated: OOD data was found to be from the matched ShareGPT distribution instead of true OOD.")
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    sweep = {r: {"fcfs": indist(r, "fcfs"), "ltr": indist(r, "opt-xxx")} for r in RATES}
-    try:
-        for r in RATES:
-            sweep[r]["cls"] = indist(r, "tpt-class10-xxx")
-    except RuntimeError:
-        pass  # class arm not run yet — fall back to two lines
-    ood4f, ood4l = ood(4, "fcfs"), ood(4, "opt-xxx")
+    
+    sweep = {
+        r: {
+            "fcfs": get_experiment_data(f"sweep-r{r}-fcfs"),
+            "ltr": get_experiment_data(f"sweep-r{r}-ltr")
+        } for r in RATES
+    }
+    
+    ood4f = get_experiment_data("ood-r4-fcfs")
+    ood4l = get_experiment_data("ood-r4-ltr")
 
     fig_motivation(sweep[4]["fcfs"], sweep[4]["ltr"], ood4f, ood4l)
     fig_main(sweep)
@@ -180,9 +208,6 @@ def main():
             "Latency CDF — in-distribution (LMSYS, rate 8)", "fig_cdf_indist_r8.png")
     fig_cdf(ood4f, ood4l,
             "Latency CDF — OOD (ShareGPT trace × LMSYS predictor, rate 4)", "fig_cdf_ood_r4.png")
-    # Disable hardcoded misleading charts per PR feedback
-    # fig_ood_mitigation()
-    # fig_ood_survival()
     print("ALL_CHARTS_DONE")
 
 

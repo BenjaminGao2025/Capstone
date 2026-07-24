@@ -189,17 +189,17 @@ See `docs/submission/HUMAN_WRITING_REQUIRED.md` for the complete per-section che
 
 ## 9.11 Commit and PR Information
 
-To be updated after commits are made.
+This report reflects the validation of implementation commit `1939f8d5884d443db18d8fc26a0c1c9781e1a550`.
 
 | Field | Value |
 |-------|-------|
 | Branch | `antigravity/capstone-submission-hardening-20260724` |
-| Head SHA | `e4059095a85e8769b2bf800598a6879cf6b928d8` |
-| Commit SHAs | `19de334`, `1138a2c`, `67924bb`, `fcba905`, `59fc725`, `e405909` |
+| Implementation Head SHA | `1939f8d5884d443db18d8fc26a0c1c9781e1a550` |
+| Commit SHAs | `19de334`, `1138a2c`, `67924bb`, `fcba905`, `59fc725`, `e405909`, `1939f8d` |
 | Draft PR URL | https://github.com/BenjaminGao2025/Capstone/pull/30 |
 | PR state | Draft |
 | Merge state | **NOT MERGED** |
-| CI Run ID | [30115861644](https://github.com/BenjaminGao2025/Capstone/actions/runs/30115861644) |
+| CI Run ID | [30125296357](https://github.com/BenjaminGao2025/Capstone/actions/runs/30125296357) |
 | CI Status | **SUCCESS** |
 | Unit Test Cmd | `python3 -m unittest discover -s tests -v` |
 | Unit Test Exit | `0` |

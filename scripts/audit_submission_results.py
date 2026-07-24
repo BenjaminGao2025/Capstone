@@ -3,6 +3,7 @@ import json
 import hashlib
 import argparse
 import re
+import pathlib
 
 SECRET_PATTERNS = [
     re.compile(r"hooks\.slack"),
@@ -94,15 +95,14 @@ def validate_schema(manifest, repo_root):
                     
     return errors
 
-def validate_path_safety(path_str):
+def validate_path_safety(path_str, repo_root):
     if not path_str:
         return True
-    if path_str.startswith("/"):
+    try:
+        p = pathlib.Path(repo_root) / path_str
+        return p.resolve().is_relative_to(pathlib.Path(repo_root).resolve())
+    except Exception:
         return False
-    parts = path_str.split("/")
-    if ".." in parts:
-        return False
-    return True
 
 def hash_file(filepath):
     sha256_hash = hashlib.sha256()
@@ -121,7 +121,7 @@ def check_secrets_stream(filepath):
 
 def check_scheduler_match(manifest_arm, json_schedule_type):
     if manifest_arm == "fcfs" and json_schedule_type == "fcfs": return True
-    if manifest_arm == "ltr" and json_schedule_type.startswith("opt-"): return True
+    if manifest_arm == "ltr" and json_schedule_type.startswith("opt-") and not json_schedule_type.startswith("opt-aging-"): return True
     if manifest_arm == "v1" and json_schedule_type.startswith("opt-aging-"): return True
     if manifest_arm.startswith("opt-aging-") and json_schedule_type.startswith("opt-aging-"): return True
     if manifest_arm.startswith("opt-") and not manifest_arm.startswith("opt-aging-") and json_schedule_type.startswith("opt-") and not json_schedule_type.startswith("opt-aging-"): return True
@@ -172,7 +172,7 @@ def audit_manifest(manifest_path, repo_root):
         # Path safety validation
         paths_to_check = ["result_path", "log_path", "source_script", "predictor_config_path"]
         for p in paths_to_check:
-            if not validate_path_safety(exp.get(p)):
+            if not validate_path_safety(exp.get(p), repo_root):
                 audit_result["errors"].append(f"Invalid/unsafe path for {p}: {exp.get(p)}")
                 has_blockers = True
 
@@ -254,7 +254,7 @@ def audit_manifest(manifest_path, repo_root):
                 if san_ver != "1.0.0":
                     audit_result["errors"].append(f"Unsupported sanitizer_version: {san_ver}")
                     has_blockers = True
-                if not validate_path_safety(orig_path_rel):
+                if not validate_path_safety(orig_path_rel, repo_root):
                     audit_result["errors"].append(f"Invalid/unsafe path for original_result_path: {orig_path_rel}")
                     has_blockers = True
                 

@@ -4,8 +4,11 @@ import argparse
 import hashlib
 import sys
 import copy
+import os
+import tempfile
+import pathlib
 
-SANITIZER_VERSION = "v1.0.0"
+SANITIZER_VERSION = "1.0.0"
 
 def hash_file(filepath):
     sha256 = hashlib.sha256()
@@ -20,9 +23,26 @@ def main():
     parser.add_argument("--output", required=True, help="Sanitized JSON file output path")
     args = parser.parse_args()
 
+    input_path = pathlib.Path(args.input).resolve()
+    output_raw = pathlib.Path(args.output)
+
+    if output_raw.exists() and output_raw.is_symlink() and output_raw.resolve() == input_path:
+        print("ERROR: output is a symlink to input.", file=sys.stderr)
+        sys.exit(1)
+
+    output_path = output_raw.resolve()
+
+    if input_path == output_path:
+        print("ERROR: input and output cannot be the same file.", file=sys.stderr)
+        sys.exit(1)
+
+    if output_path.exists():
+        print("ERROR: output already exists, refusing to silently overwrite.", file=sys.stderr)
+        sys.exit(1)
+
     # Read original
     try:
-        with open(args.input, "r") as f:
+        with open(input_path, "r") as f:
             original = json.load(f)
     except Exception as e:
         print(f"Error reading input: {e}", file=sys.stderr)
@@ -40,27 +60,47 @@ def main():
     sanitized_data = copy.deepcopy(original)
     del sanitized_data["generated_texts"]
 
-    # Write output deterministically
+    # Write output deterministically to a temporary file
+    output_dir = output_path.parent
     try:
-        with open(args.output, "w") as f:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=output_dir, prefix=".sanitizer_tmp_")
+        
+        with os.fdopen(fd, "w") as f:
             json.dump(sanitized_data, f, indent=2, sort_keys=True)
+            f.flush()
+            os.fsync(f.fileno())
+            
     except Exception as e:
         print(f"Error writing output: {e}", file=sys.stderr)
+        if 'tmp_path' in locals() and os.path.exists(tmp_path):
+            os.remove(tmp_path)
         sys.exit(1)
 
     # Re-read and verify
-    with open(args.input, "r") as f:
-        re_original = json.load(f)
-    with open(args.output, "r") as f:
-        re_sanitized = json.load(f)
+    try:
+        with open(input_path, "r") as f:
+            re_original = json.load(f)
+        with open(tmp_path, "r") as f:
+            re_sanitized = json.load(f)
 
-    del re_original["generated_texts"]
-    if re_original != re_sanitized:
-        print("Verification failed: other fields were modified during sanitization", file=sys.stderr)
-        sys.exit(1)
+        del re_original["generated_texts"]
+        if re_original != re_sanitized:
+            print("Verification failed: other fields were modified during sanitization", file=sys.stderr)
+            os.remove(tmp_path)
+            sys.exit(1)
+            
+        orig_sha = hash_file(input_path)
+        san_sha = hash_file(tmp_path)
         
-    orig_sha = hash_file(args.input)
-    san_sha = hash_file(args.output)
+        # Atomic replace
+        os.replace(tmp_path, output_path)
+        
+    except Exception as e:
+        print(f"Error during verification or atomic write: {e}", file=sys.stderr)
+        if 'tmp_path' in locals() and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        sys.exit(1)
     
     print(json.dumps({
         "sanitizer_version": SANITIZER_VERSION,

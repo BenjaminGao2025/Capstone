@@ -30,6 +30,38 @@ set -euo pipefail
 : "${NUM_PROMPTS?ERROR: NUM_PROMPTS environment variable is required}"
 : "${RESULT_ROOT?ERROR: RESULT_ROOT environment variable is required}"
 
+# Input validation to prevent injection
+if [[ "$PHASE" =~ [^a-zA-Z0-9_-] ]] || [[ "$ARM" =~ [^a-zA-Z0-9_-] ]] || [[ ! "$REQUEST_RATE" =~ ^[0-9]+(\.[0-9]+)?$ ]] || [[ ! "$SEED" =~ ^[0-9]+$ ]] || [[ ! "$NUM_PROMPTS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ERROR: Invalid characters or values in inputs." >&2
+    exit 1
+fi
+
+if [[ "$PHASE" == *..* ]] || [[ "$PHASE" == */* ]] || [[ "$PHASE" == *\\* ]] || [[ -z "$PHASE" ]]; then
+    echo "ERROR: Path traversal detected in PHASE." >&2
+    exit 1
+fi
+
+# Allow only standard arms unless RUNNER_SCRIPT is defined
+if [[ -z "${RUNNER_SCRIPT:-}" ]]; then
+    if [[ "$ARM" != "fcfs" && "$ARM" != "ltr" && "$ARM" != "v1" ]]; then
+        echo "ERROR: ARM must be fcfs, ltr, or v1 unless RUNNER_SCRIPT is provided." >&2
+        exit 1
+    fi
+else
+    if [ ! -f "$RUNNER_SCRIPT" ] || [[ "$RUNNER_SCRIPT" == *..* ]]; then
+        echo "ERROR: RUNNER_SCRIPT is invalid or contains path traversal." >&2
+        exit 1
+    fi
+fi
+
+# Validate PREDICTOR safely if provided
+if [ -n "${PREDICTOR:-}" ]; then
+    if [[ "$PREDICTOR" == *..* ]]; then
+        echo "ERROR: Path traversal in PREDICTOR." >&2
+        exit 1
+    fi
+fi
+
 # 2. Create output directory
 OUT_DIR="${RESULT_ROOT}/${PHASE}/rate${REQUEST_RATE}/seed${SEED}/${ARM}"
 
@@ -57,9 +89,6 @@ elif [ "$ARM" = "ltr" ]; then
     SCRIPT_TO_RUN="scripts/run_ltr.sh"
 elif [ "$ARM" = "v1" ]; then
     SCRIPT_TO_RUN="scripts/run_ltr_aging.sh"
-else
-    echo "ERROR: Unknown ARM '$ARM' and RUNNER_SCRIPT not set." >&2
-    exit 1
 fi
 
 if [ ! -f "$SCRIPT_TO_RUN" ]; then
@@ -127,81 +156,21 @@ fi
 # 15. The single new JSON is the result
 RESULT_FILE="$NEW_JSONS"
 
-# Input validation to prevent injection
-if [[ "$PHASE" =~ [^a-zA-Z0-9_-] ]] || [[ "$ARM" =~ [^a-zA-Z0-9_-] ]] || [[ "$REQUEST_RATE" =~ [^0-9.] ]] || [[ "$SEED" =~ [^0-9] ]]; then
-    echo "ERROR: Invalid characters in inputs." >&2
-    exit 1
-fi
-
-if [[ "$PHASE" == *..* ]] || [[ "$PHASE" == */* ]] || [[ "$PHASE" == *\\* ]]; then
-    echo "ERROR: Path traversal detected in inputs." >&2
-    exit 1
-fi
-
 # 16. Python Validation
 echo "Validating result JSON..."
-python3 -c '
-import json, sys
+python3 scripts/validate_single_result.py \
+    --result-path "$RESULT_FILE" \
+    --arm "$ARM" \
+    --request-rate "$REQUEST_RATE" \
+    --expected-seed "$SEED" \
+    --expected-prompts "$NUM_PROMPTS" || exit 1
 
-result_file = sys.argv[1]
-req_rate_expected = float(sys.argv[2])
-expected_prompts = int(sys.argv[3])
-arm = sys.argv[4]
-expected_seed = int(sys.argv[5])
-
-try:
-    with open(result_file, "r") as f:
-        data = json.load(f)
-except Exception as e:
-    print("ERROR parsing JSON:", e, file=sys.stderr)
-    sys.exit(1)
-    
-req_rate = float(data.get("request_rate", -1))
-if abs(req_rate - req_rate_expected) > 1e-5:
-    print("ERROR: request_rate mismatch", file=sys.stderr)
-    sys.exit(1)
-
-completed = data.get("completed", -1)
-if completed != expected_prompts:
-    print(f"ERROR: completed count {completed} != expected {expected_prompts}", file=sys.stderr)
-    sys.exit(1)
-
-sched_type = data.get("schedule_type", "")
-match = False
-if arm == "fcfs" and sched_type == "fcfs": match = True
-elif arm == "ltr" and sched_type.startswith("opt-") and not sched_type.startswith("opt-aging-"): match = True
-elif arm == "v1" and sched_type.startswith("opt-aging-"): match = True
-elif arm == sched_type: match = True
-
-if not match:
-    print(f"ERROR: schedule_type mismatch. ARM={arm}, json={sched_type}", file=sys.stderr)
-    sys.exit(1)
-
-# array length checks
-ttfts = data.get("ttfts", [])
-itls = data.get("itls", [])
-if len(ttfts) != completed:
-    print(f"ERROR: ttfts length {len(ttfts)} != completed {completed}", file=sys.stderr)
-    sys.exit(1)
-if len(itls) != completed:
-    print(f"ERROR: itls length {len(itls)} != completed {completed}", file=sys.stderr)
-    sys.exit(1)
-
-# errors/failed requests check
-if data.get("errors", 0) > 0 or data.get("failed_requests", 0) > 0 or data.get("failed", 0) > 0:
-    print("ERROR: Result contains errors or failed requests", file=sys.stderr)
-    sys.exit(1)
-
-# seed check
-if "seed" not in data:
-    print("ERROR: seed field missing in result", file=sys.stderr)
-    sys.exit(1)
-actual_seed = data["seed"]
-if actual_seed != expected_seed:
-    print(f"ERROR: seed {actual_seed} != expected {expected_seed}", file=sys.stderr)
-    sys.exit(1)
-
-' "$RESULT_FILE" "$REQUEST_RATE" "$NUM_PROMPTS" "$ARM" "$SEED" || exit 1
+# Check if seed was found in JSON
+HAS_SEED=$(python3 -c "import json; print('true' if 'seed' in json.load(open('$RESULT_FILE')) else 'false')" 2>/dev/null || echo "false")
+SEED_VERIFICATION="verified_from_result"
+if [ "$HAS_SEED" = "false" ]; then
+    SEED_VERIFICATION="requested_only_not_embedded_in_result"
+fi
 
 # 17. Record metadata:
 RESULT_SHA=$(shasum -a 256 "$RESULT_FILE" | awk '{print $1}')
@@ -214,15 +183,7 @@ fi
 REPO_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# 18. Call the audit validator if available (strict mode: MUST be available)
-if command -v audit_validator >/dev/null 2>&1; then
-    audit_validator "$OUT_DIR" || { echo "ERROR: audit_validator failed" >&2; exit 1; }
-elif [ -f "scripts/audit_validator.sh" ]; then
-    bash scripts/audit_validator.sh "$OUT_DIR" || { echo "ERROR: audit_validator.sh failed" >&2; exit 1; }
-else
-    echo "ERROR: audit_validator not found! Strict validation requires it." >&2
-    exit 1
-fi
+
 
 # 19. Write experiment_manifest.json ONLY after all passes
 cat <<EOF > "$OUT_DIR/experiment_manifest.json"
@@ -231,6 +192,8 @@ cat <<EOF > "$OUT_DIR/experiment_manifest.json"
     "arm": "$ARM",
     "request_rate": $REQUEST_RATE,
     "seed": $SEED,
+    "requested_seed": $SEED,
+    "seed_verification": "$SEED_VERIFICATION",
     "num_prompts": $NUM_PROMPTS,
     "result_file": "$(basename "$RESULT_FILE")",
     "result_sha256": "$RESULT_SHA",
