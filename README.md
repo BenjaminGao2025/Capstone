@@ -148,6 +148,19 @@ python scripts/plot_compare.py results/*.json
 The plot includes request-latency CDF, mean latency, p99 latency, and normalized
 latency in seconds per output token.
 
+### 5. Apply the aging-gate patch (for OOD mitigation runs)
+
+The aging gate and preemption protection are implemented as a patch to vllm-ltr:
+
+```bash
+cd /path/to/vllm-ltr
+git apply --check /path/to/capstone/scripts/vllm-ltr-aging-gate.patch
+git apply /path/to/capstone/scripts/vllm-ltr-aging-gate.patch
+pip install -e .  # rebuild
+```
+
+The patch targets vllm-ltr commit `13bbf6ff`. The upstream commit for `git apply --check` verification is unverified — it was developed against the pinned revision but the exact base is not recorded in the patch metadata.
+
 ## Smoke Result
 
 | Scheduler | Completed | Throughput (req/s) | Mean TTFT (ms) | Mean latency (s) | P99 latency (s) | Mean normalized latency (s/token) |
@@ -208,10 +221,12 @@ Peak in-distribution gain: **8.1× mean TTFT** at rate 8.
 > engine **crashes**. The only configuration that is actually deployable — no
 > p99 regression and no crash — is the waiting-time aging gate, whose mean-TTFT
 > gain shrinks to roughly **~1.2–1.3×** over FCFS. That mitigation has now been
-> **validated on the RTX 3090** (2026-07-09, seeds 0–2): aging gate +
+> validated on the RTX 3090** (2026-06-21, single seed): aging gate +
 > preemption protection completes 500/500 at OOD rate 8 where raw LTR crashes,
-> and at rate 4 beats FCFS on both mean and p99 TTFT (34.8 s / 87.7 s vs
-> 40.4 s / 96.0 s). However, this safety comes at a cost: **on the in-distribution trace, the mean TTFT advantage drops from LTR's 2.03s to 13.07s** (compared to FCFS's 16.36s) — a tradeoff of in-distribution speed for out-of-distribution stability. We do **not** claim "8× everywhere," and we do **not** claim a
+> and at rate 4 beats FCFS on both mean and p99 TTFT.
+> Multi-seed stability (2026-07-09, seeds 0–2) was confirmed with a
+> ShareGPT-matched predictor (34.8 s / 87.7 s vs 40.4 s / 96.0 s), but this
+> is matched-distribution evidence, not LMSYS→ShareGPT OOD proof. However, this safety comes at a cost: **on the in-distribution trace, the mean TTFT advantage drops from LTR's 2.03s to 13.07s** (compared to FCFS's 16.36s) — a tradeoff of in-distribution speed for out-of-distribution stability. We do **not** claim "8× everywhere," and we do **not** claim a
 > free ~1.7× deployable gain.
 
 ### Diagnostic Figure
@@ -270,8 +285,41 @@ Two hardware-measured conclusions:
    trace** (lower mean *and* lower p99), matching the simulation's W=8
    prediction. The deployable mean gain is ~1.2–1.3×, not raw LTR's 1.7×.
 
-Multi-seed validation (seeds 0/1/2, 2026-07-09) confirms the rate-4 Pareto improvement: V1 mean TTFT 34.8s vs FCFS 40.4s, p99 87.7s vs 96.0s. See Phase D in [aging-gate GPU validation report](docs/experiments/2026-06-21-aging-gate-validation.md); raw JSONs in `results/llama3-8b/p2/`.
+Multi-seed stability (seeds 0/1/2, 2026-07-09) under a **ShareGPT-matched predictor** confirms the rate-4 Pareto improvement: V1 mean TTFT 34.8s vs FCFS 40.4s, p99 87.7s vs 96.0s. **Note:** Phase D used `opt-125m-llama3-8b-sharegpt-score-trainbucket10-b32` (ShareGPT-trained), so this is matched-distribution evidence, not LMSYS→ShareGPT OOD proof. See Phase D in [aging-gate GPU validation report](docs/experiments/2026-06-21-aging-gate-validation.md); raw JSONs in `results/llama3-8b/p2/`.
 Raw JSONs and logs: `server_backup/results/`.
+
+### Experiment Layers
+
+| Phase | Predictor | Test trace | Distribution | Seeds | Evidence |
+|-------|-----------|------------|-------------|-------|----------|
+| Sweep (in-dist) | LMSYS-trained OPT-125M | LMSYS | In-distribution | seed 0 | Rate 2–32, FCFS vs LTR |
+| OOD characterization | LMSYS-trained OPT-125M | ShareGPT | OOD | seed 0 | tau collapse, p99 inversion, rate-8 crash |
+| Phase A/C (mitigation) | LMSYS-trained OPT-125M | ShareGPT | OOD | seed 0 | Aging gate + preemption protection |
+| Phase D (stability) | ShareGPT-trained OPT-125M | ShareGPT | **Matched** | seeds 0/1/2 | Multi-seed V1 stability, NOT OOD proof |
+| Ablation | Internal head (EGTP) | LMSYS | In-distribution | seed 0 | Head-swap comparison |
+
+### Running Future Experiments
+
+For all new experiments, use the fail-closed wrapper:
+
+```bash
+PHASE=phase_x ARM=fcfs REQUEST_RATE=4 SEED=0 NUM_PROMPTS=500 \
+  RESULT_ROOT=/path/to/results \
+  bash scripts/run_one_experiment_safe.sh
+```
+
+Do NOT use `scripts/run_part2.sh` — it is deprecated due to shared output directory and global-latest-JSON selection risks.
+
+### Submission Audit
+
+```bash
+python scripts/audit_submission_results.py \
+  --manifest results/submission_manifest.json \
+  --json-output results/submission_audit.json \
+  --markdown-output results/submission_audit.md
+```
+
+Exit code 0 means all mandatory integrity checks pass.
 
 ## Current Status
 
