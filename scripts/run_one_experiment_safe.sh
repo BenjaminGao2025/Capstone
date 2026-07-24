@@ -216,6 +216,23 @@ REPO_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # 19. Write experiment_manifest.json ONLY after all passes
+RAW_RESULT_FILE="$(basename "$RESULT_FILE")"
+RAW_RESULT_SHA=$(shasum -a 256 "$RESULT_FILE" | awk '{print $1}')
+
+SANITIZED_FILE_NAME="null"
+SANITIZED_SHA="null"
+SANITIZER_VER="null"
+if [ "$HAS_GEN_TEXTS" = "True" ]; then
+    SANITIZED_FILE_NAME='"'"$(basename "$FINAL_RESULT_FILE")"'"'
+    SANITIZED_SHA='"'"$RESULT_SHA"'"'
+    SANITIZER_VER='"1.0.0"'
+fi
+
+CONTAINS_GEN_TEXTS="false"
+if [ "$HAS_GEN_TEXTS" = "True" ]; then
+    CONTAINS_GEN_TEXTS="true"
+fi
+
 cat <<EOF > "$OUT_DIR/experiment_manifest.json"
 {
     "phase": "$PHASE",
@@ -225,14 +242,18 @@ cat <<EOF > "$OUT_DIR/experiment_manifest.json"
     "requested_seed": $SEED,
     "seed_verification": "$SEED_VERIFICATION",
     "num_prompts": $NUM_PROMPTS,
-    "result_file": "$(basename "$FINAL_RESULT_FILE")",
-    "result_sha256": "$RESULT_SHA",
+    "raw_result_file": "$RAW_RESULT_FILE",
+    "raw_result_sha256": "$RAW_RESULT_SHA",
+    "contains_generated_texts": $CONTAINS_GEN_TEXTS,
+    "sanitized_result_file": $SANITIZED_FILE_NAME,
+    "sanitized_result_sha256": $SANITIZED_SHA,
+    "sanitizer_version": $SANITIZER_VER,
+    "eligible_for_public_submission": $ELIGIBLE_JSON,
     "predictor_sha256": $PREDICTOR_SHA,
     "repo_commit": "$REPO_COMMIT",
     "source_script": "$SCRIPT_TO_RUN",
     "timestamp": "$TIMESTAMP",
-    "status": "success",
-    "eligible_for_aggregation": $ELIGIBLE_JSON
+    "status": "success"
 }
 EOF
 

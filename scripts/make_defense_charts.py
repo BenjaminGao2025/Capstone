@@ -122,6 +122,7 @@ def get_experiment_data(exp_id):
         "mean_lat": float(lat.mean()),
         "p99_lat": float(np.percentile(lat, 99)),
         "tau": d.get("aux_kendall_tau"),
+        "result_sha256": exp.get("result_sha256"),
     }
 
 
@@ -226,6 +227,34 @@ def main():
             "Latency CDF — in-distribution (LMSYS, rate 8)", "fig_cdf_indist_r8.png")
     fig_cdf(ood4f, ood4l,
             "Latency CDF — OOD (ShareGPT trace × LMSYS predictor, rate 4)", "fig_cdf_ood_r4.png")
+            
+    figure_inputs = {
+        "generator_version": "1.0.0",
+        "fig_motivation": {
+            "indist_r4_fcfs": {"exp_id": "sweep-r4-fcfs", "sha": sweep[4]["fcfs"]["result_sha256"], "p99_lat": sweep[4]["fcfs"]["p99_lat"]},
+            "indist_r4_ltr": {"exp_id": "sweep-r4-ltr", "sha": sweep[4]["ltr"]["result_sha256"], "tau": sweep[4]["ltr"]["tau"], "p99_lat": sweep[4]["ltr"]["p99_lat"]},
+            "ood_r4_fcfs": {"exp_id": "ood-r4-fcfs", "sha": ood4f["result_sha256"], "p99_lat": ood4f["p99_lat"]},
+            "ood_r4_ltr": {"exp_id": "ood-r4-ltr", "sha": ood4l["result_sha256"], "tau": ood4l["tau"], "p99_lat": ood4l["p99_lat"]}
+        },
+        "fig_ttft_vs_rate": {
+            str(r): {
+                "fcfs": {"exp_id": f"sweep-r{r}-fcfs", "sha": sweep[r]["fcfs"]["result_sha256"], "mean_ttft": sweep[r]["fcfs"]["mean_ttft"], "mean_lat": sweep[r]["fcfs"]["mean_lat"]},
+                "ltr": {"exp_id": f"sweep-r{r}-ltr", "sha": sweep[r]["ltr"]["result_sha256"], "mean_ttft": sweep[r]["ltr"]["mean_ttft"], "mean_lat": sweep[r]["ltr"]["mean_lat"]}
+            } for r in RATES
+        },
+        "fig_cdf_indist_r8": {
+            "fcfs": {"exp_id": "sweep-r8-fcfs", "sha": sweep[8]["fcfs"]["result_sha256"], "mean_lat": sweep[8]["fcfs"]["mean_lat"]},
+            "ltr": {"exp_id": "sweep-r8-ltr", "sha": sweep[8]["ltr"]["result_sha256"], "mean_lat": sweep[8]["ltr"]["mean_lat"]}
+        },
+        "fig_cdf_ood_r4": {
+            "fcfs": {"exp_id": "ood-r4-fcfs", "sha": ood4f["result_sha256"], "mean_lat": ood4f["mean_lat"]},
+            "ltr": {"exp_id": "ood-r4-ltr", "sha": ood4l["result_sha256"], "mean_lat": ood4l["mean_lat"]}
+        }
+    }
+    with open(os.path.join(OUT, "figure_inputs.json"), "w") as f:
+        json.dump(figure_inputs, f, indent=2)
+    print(f"saved {OUT}/figure_inputs.json")
+    
     print("ALL_CHARTS_DONE")
 
 

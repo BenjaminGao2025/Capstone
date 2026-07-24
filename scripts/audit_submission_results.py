@@ -129,12 +129,13 @@ def hash_file(filepath):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
-def check_secrets_stream(filepath):
-    with open(filepath, "r", errors="ignore") as f:
-        for line in f:
-            for pattern in SECRET_PATTERNS:
-                if pattern.search(line):
-                    return True
+def check_secrets_in_data(data):
+    # Serialize data without generated_texts to scan for secrets
+    data_copy = {k: v for k, v in data.items() if k != "generated_texts"}
+    s = json.dumps(data_copy)
+    for pattern in SECRET_PATTERNS:
+        if pattern.search(s):
+            return True
     return False
 
 def check_scheduler_match(manifest_arm, json_schedule_type):
@@ -301,8 +302,8 @@ def audit_manifest(manifest_path, repo_root):
                         audit_result["errors"].append(f"Failed to parse original result JSON: {e}")
                         has_blockers = True
             
-        # Secret Search (stream)
-        if check_secrets_stream(result_abs_path):
+        # Secret Search on non-generated_texts
+        if check_secrets_in_data(res_data):
             audit_result["errors"].append("Secret-like string detection")
             has_blockers = True
             

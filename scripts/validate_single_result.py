@@ -13,12 +13,13 @@ SECRET_PATTERNS = [
     re.compile(r"BEGIN PRIVATE KEY")
 ]
 
-def check_secrets_stream(filepath):
-    with open(filepath, "r", errors="ignore") as f:
-        for line in f:
-            for pattern in SECRET_PATTERNS:
-                if pattern.search(line):
-                    return True
+def check_secrets_in_data(data):
+    # Serialize data without generated_texts to scan for secrets
+    data_copy = {k: v for k, v in data.items() if k != "generated_texts"}
+    s = json.dumps(data_copy)
+    for pattern in SECRET_PATTERNS:
+        if pattern.search(s):
+            return True
     return False
 
 def main():
@@ -98,8 +99,8 @@ def main():
             print(f"ERROR: seed {actual_seed} != expected {args.expected_seed}", file=sys.stderr)
             sys.exit(1)
 
-    # secret-like pattern scan
-    if check_secrets_stream(result_file):
+    # secret-like pattern scan on raw non-generated_texts data
+    if check_secrets_in_data(data):
         print("ERROR: Secret-like string detected in result file", file=sys.stderr)
         sys.exit(1)
 

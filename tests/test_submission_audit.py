@@ -363,6 +363,18 @@ class TestSubmissionAudit(unittest.TestCase):
         self.assertFalse(validate_path_safety("folder\\..\\outside.json", self.repo_root))
         self.assertFalse(validate_path_safety("..\\outside.json", self.repo_root))
 
+    def test_23_sanitizer_generated_texts_secret_ignored(self):
+        # generated_texts中包含secret，但因为被剥离，所以在sanitized和raw上都不应当阻断
+        orig_path, san_path, orig_data, san_data = self._setup_sanitizer_test()
+        orig_data["generated_texts"] = ["This has a fake secret: ghp_123456789012345678901234567890123456"]
+        
+        orig_sha = self.write_json(orig_path, orig_data)
+        self.valid_manifest["experiments"][0]["original_result_sha256"] = orig_sha
+        self.write_json(self.manifest_path, self.valid_manifest)
+        
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertFalse(res["has_blockers"])
+
     def test_cli(self):
         res_path = os.path.join(self.repo_root, "exp1.json")
         sha = self.write_json(res_path, self.valid_result)
