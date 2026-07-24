@@ -15,7 +15,14 @@ class TestSubmissionAudit(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
         self.repo_root = self.temp_dir
-        self.manifest_path = os.path.join(self.temp_dir, "manifest.json")
+        os.makedirs(os.path.join(self.repo_root, "results"))
+        self.manifest_path = os.path.join(self.repo_root, "results", "submission_manifest.json")
+        
+        # Copy the actual schema file into the temp dir
+        import shutil
+        actual_repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        actual_schema_path = os.path.join(actual_repo_root, "results", "submission_manifest.schema.json")
+        shutil.copy(actual_schema_path, os.path.join(self.repo_root, "results", "submission_manifest.schema.json"))
         
         # Base valid result JSON
         self.valid_result = {
@@ -203,8 +210,8 @@ class TestSubmissionAudit(unittest.TestCase):
         self.write_json(self.manifest_path, self.valid_manifest)
         
         res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
-        self.assertFalse(res["has_blockers"])
-        self.assertTrue(any("EXPLICIT REVIEW REQUIRED: generated_texts found in eligible result" in w for w in res["results"][0]["warnings"]))
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Sanitized derivative MUST NOT contain generated_texts" in e for e in res["results"][0]["errors"]))
 
     def test_10_secret_detection_stream(self):
         # j. Secret-like string detection > 10KB
@@ -271,6 +278,80 @@ class TestSubmissionAudit(unittest.TestCase):
         res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
         self.assertTrue(res["has_blockers"])
         self.assertTrue(any("Invalid/unsafe path for result_path" in e for e in res["results"][0]["errors"]))
+
+    def _setup_sanitizer_test(self):
+        orig_path = os.path.join(self.repo_root, "exp1_orig.json")
+        san_path = os.path.join(self.repo_root, "exp1.json")
+        orig_data = self.valid_result.copy()
+        orig_data["generated_texts"] = ["text1", "text2"]
+        san_data = self.valid_result.copy()
+        
+        orig_sha = self.write_json(orig_path, orig_data)
+        san_sha = self.write_json(san_path, san_data)
+        
+        self.valid_manifest["experiments"][0]["original_result_path"] = "exp1_orig.json"
+        self.valid_manifest["experiments"][0]["original_result_sha256"] = orig_sha
+        self.valid_manifest["experiments"][0]["sanitizer_version"] = "1.0.0"
+        self.valid_manifest["experiments"][0]["result_sha256"] = san_sha
+        
+        return orig_path, san_path, orig_data, san_data
+
+    def test_15_sanitizer_valid(self):
+        self._setup_sanitizer_test()
+        self.write_json(self.manifest_path, self.valid_manifest)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertFalse(res["has_blockers"])
+
+    def test_16_sanitizer_orig_missing(self):
+        orig_path, san_path, orig_data, san_data = self._setup_sanitizer_test()
+        os.remove(orig_path)
+        self.write_json(self.manifest_path, self.valid_manifest)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Original file does not exist" in e for e in res["results"][0]["errors"]))
+
+    def test_17_sanitizer_orig_sha_mismatch(self):
+        orig_path, san_path, orig_data, san_data = self._setup_sanitizer_test()
+        self.valid_manifest["experiments"][0]["original_result_sha256"] = "c" * 64
+        self.write_json(self.manifest_path, self.valid_manifest)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Original SHA-256 mismatch" in e for e in res["results"][0]["errors"]))
+
+    def test_18_sanitizer_numeric_mod(self):
+        orig_path, san_path, orig_data, san_data = self._setup_sanitizer_test()
+        san_data["mean_ttft_ms"] = 999.0
+        self.valid_manifest["experiments"][0]["result_sha256"] = self.write_json(san_path, san_data)
+        self.write_json(self.manifest_path, self.valid_manifest)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Sanitized file does not match original file" in e for e in res["results"][0]["errors"]))
+
+    def test_19_sanitizer_extra_deletion(self):
+        orig_path, san_path, orig_data, san_data = self._setup_sanitizer_test()
+        del san_data["completed"]
+        self.valid_manifest["experiments"][0]["result_sha256"] = self.write_json(san_path, san_data)
+        self.write_json(self.manifest_path, self.valid_manifest)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Sanitized file does not match original file" in e for e in res["results"][0]["errors"]))
+
+    def test_20_sanitizer_array_mod(self):
+        orig_path, san_path, orig_data, san_data = self._setup_sanitizer_test()
+        san_data["ttfts"][0] = 99.9
+        self.valid_manifest["experiments"][0]["result_sha256"] = self.write_json(san_path, san_data)
+        self.write_json(self.manifest_path, self.valid_manifest)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Sanitized file does not match original file" in e for e in res["results"][0]["errors"]))
+
+    def test_21_sanitizer_unsafe_orig_path(self):
+        self._setup_sanitizer_test()
+        self.valid_manifest["experiments"][0]["original_result_path"] = "../foo.json"
+        self.write_json(self.manifest_path, self.valid_manifest)
+        res = audit_submission_results.audit_manifest(self.manifest_path, self.repo_root)
+        self.assertTrue(res["has_blockers"])
+        self.assertTrue(any("Invalid/unsafe path for original_result_path" in e for e in res["results"][0]["errors"]))
 
     def test_cli(self):
         res_path = os.path.join(self.repo_root, "exp1.json")

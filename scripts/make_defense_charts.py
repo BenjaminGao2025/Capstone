@@ -9,7 +9,6 @@ Outputs (figures/):
 
 Run from repo root:  python3 scripts/make_defense_charts.py
 """
-import glob
 import json
 import os
 
@@ -18,16 +17,20 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-RES = "results/llama3-8b"
-OUT = "figures"
+# Find repo root to resolve relative paths
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MANIFEST_PATH = os.path.join(REPO_ROOT, "results", "submission_manifest.json")
+OUT = os.path.join(REPO_ROOT, "figures")
 C_FCFS, C_LTR = "#777777", "#2e7d32"
 RATES = [2, 4, 8, 16, 32]
 
+with open(MANIFEST_PATH) as f:
+    manifest = json.load(f)
 
-def load(pattern):
-    paths = [p for p in glob.glob(os.path.join(RES, pattern)) if "crashed" not in p]
-    assert len(paths) == 1, f"{pattern} -> {paths}"
-    d = json.load(open(paths[0]))
+def load(rel_path):
+    path = os.path.join(REPO_ROOT, rel_path)
+    with open(path) as f:
+        d = json.load(f)
     lat = np.sort([t + sum(i) for t, i in zip(d["ttfts"], d["itls"])])
     return {
         "lat": lat,
@@ -37,21 +40,38 @@ def load(pattern):
         "tau": d.get("aux_kendall_tau"),
     }
 
+def find_experiment(phase, rate, arm, relation):
+    for exp in manifest.get("experiments", []):
+        if not exp.get("eligible_for_aggregation"):
+            continue
+        if exp.get("phase") != phase:
+            continue
+        if exp.get("request_rate") != rate:
+            continue
+        if exp.get("distribution_relation") != relation:
+            continue
+            
+        exp_arm = exp.get("arm")
+        target_arm = arm
+        
+        # We need to map script names to manifest names.
+        if target_arm == "fcfs" and exp_arm == "fcfs":
+            return load(exp.get("result_path"))
+        elif target_arm == "opt-xxx" and exp_arm == "ltr":
+            return load(exp.get("result_path"))
+        elif target_arm == "tpt-class10-xxx" and exp_arm == "cls":
+            return load(exp.get("result_path"))
+
+    raise RuntimeError(f"Could not find eligible experiment for phase={phase}, rate={rate}, arm={arm}, relation={relation}")
 
 def indist(rate, arm):
-    # sweep files only (exclude the rate-8 probe runs by timestamp prefix 10*)
-    pat = f"vllm-{rate}.0qps-*-{arm}-20260611-1[01]*.json" if arm != "tpt-class10-xxx" \
-        else f"vllm-{rate}.0qps-*-{arm}-*.json"
-    paths = [p for p in glob.glob(os.path.join(RES, pat)) if "ood" not in p and not p.endswith("-sanitized.json")]
-    assert len(paths) == 1, f"{pat} -> {paths}"
-    return load(os.path.basename(paths[0]))
-
+    # 'sweep' phase in manifest corresponds to the indist sweeps
+    return find_experiment("sweep", rate, arm, "in_distribution")
 
 def ood(rate, arm):
-    paths = [p for p in glob.glob(os.path.join(RES, f"vllm-{rate}.0qps-*-{arm}-*-ood-sharegpt.json")) if "ablation" not in p and not p.endswith("-sanitized.json")]
-    assert len(paths) >= 1, f"ood({rate}, {arm}) -> {paths}"
-    # Use relpath so load() can find it correctly inside RES
-    return load(os.path.relpath(paths[0], RES))
+    # 'ood_characterization' phase corresponds to the true OOD Phase C tests
+    relation = "ood" if arm != "fcfs" else "in_distribution"
+    return find_experiment("ood_characterization", rate, arm, relation)
 
 
 def fig_motivation(ind4f, ind4l, ood4f, ood4l):
@@ -137,59 +157,11 @@ def fig_cdf(f, l, title, fname):
 
 
 def fig_ood_mitigation():
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
-    arms = ["FCFS", "LTR", "V1 (aging60\n+protect)"]
-    means = [40.4, 22.9, 34.8]
-    mean_stds = [2.1, 1.2, 3.2]
-    p99s = [96.0, 148.6, 87.7]
-    p99_stds = [2.1, 4.2, 6.4]
-    colors = [C_FCFS, C_LTR, "#1976D2"]
-
-    ax = axes[0]
-    bars = ax.bar(arms, means, color=colors, yerr=mean_stds, capsize=5, width=0.55)
-    for b, v in zip(bars, means):
-        ax.text(b.get_x() + b.get_width() / 2, v + 4, f"{v}s",
-                ha="center", fontsize=11, fontweight="bold")
-    ax.set_ylabel("Mean TTFT (s)")
-    ax.set_ylim(0, max(means) * 1.3)
-    ax.set_title("OOD Mean TTFT (lower is better)")
-    ax.grid(axis="y", alpha=0.3)
-
-    ax = axes[1]
-    bars = ax.bar(arms, p99s, color=colors, yerr=p99_stds, capsize=5, width=0.55)
-    for b, v in zip(bars, p99s):
-        ax.text(b.get_x() + b.get_width() / 2, v + 8, f"{v}s",
-                ha="center", fontsize=11, fontweight="bold")
-    ax.set_ylabel("P99 TTFT (s)")
-    ax.set_ylim(0, max(p99s) * 1.3)
-    ax.set_title("OOD P99 TTFT (lower is better)")
-    ax.grid(axis="y", alpha=0.3)
-
-    fig.suptitle("Combinatorial Strategy (V1): Mean and P99 both outperform FCFS (multi-seed ± std)", fontsize=13, fontweight="bold")
-    fig.tight_layout(rect=[0, 0.03, 1, 1])
-    fig.savefig(f"{OUT}/fig_ood_mitigation.png", dpi=180)
-    print(f"saved {OUT}/fig_ood_mitigation.png")
+    raise RuntimeError("Deprecated: OOD data was found to be from the matched ShareGPT distribution instead of true OOD.")
 
 
 def fig_ood_survival():
-    fig, ax = plt.subplots(figsize=(7, 4.6))
-    arms = ["FCFS", "LTR", "LTR+aging\n(120s)", "V1\n(aging60+protect)"]
-    completed = [500, 22, 15, 500]
-    colors = [C_FCFS, C_LTR, "#F9A825", "#1976D2"]
-    
-    bars = ax.bar(arms, completed, color=colors, width=0.55)
-    for b, v in zip(bars, completed):
-        ax.text(b.get_x() + b.get_width() / 2, v + 10, f"{v}/500",
-                ha="center", fontsize=11, fontweight="bold")
-    ax.set_ylabel("Successful Requests")
-    ax.set_ylim(0, 550)
-    ax.set_title("Preemption protection is the critical component for survival", fontsize=13, fontweight="bold")
-    ax.grid(axis="y", alpha=0.3)
-    fig.text(0.5, 0.015, "Note: LTR crash (22/500) from 2026-07-09 Seed 0 rerun; LTR+aging crash (15/500) from 2026-06-21 run.",
-             ha="center", fontsize=9.5, style="italic")
-    fig.tight_layout(rect=[0, 0.04, 1, 1])
-    fig.savefig(f"{OUT}/fig_ood_survival.png", dpi=180)
-    print(f"saved {OUT}/fig_ood_survival.png")
+    raise RuntimeError("Deprecated: OOD data was found to be from the matched ShareGPT distribution instead of true OOD.")
 
 
 def main():
@@ -198,7 +170,7 @@ def main():
     try:
         for r in RATES:
             sweep[r]["cls"] = indist(r, "tpt-class10-xxx")
-    except AssertionError:
+    except RuntimeError:
         pass  # class arm not run yet — fall back to two lines
     ood4f, ood4l = ood(4, "fcfs"), ood(4, "opt-xxx")
 

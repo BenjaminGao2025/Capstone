@@ -88,7 +88,7 @@ class TestSafeRunner(unittest.TestCase):
     def test_07_incomplete_completed(self):
         self.write_mock_runner(
             "#!/bin/bash\n"
-            "echo '{\"request_rate\": 4.0, \"completed\": 400, \"schedule_type\": \"fcfs\"}' > \"$RESULT_DIR/res.json\"\n"
+            "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 400, 'schedule_type': 'fcfs', 'seed': 0, 'ttfts': [0]*400, 'itls': [0]*400}))\"\n"
         )
         res = self.run_safe_runner()
         self.assertNotEqual(res.returncode, 0)
@@ -105,12 +105,13 @@ class TestSafeRunner(unittest.TestCase):
     def test_09_validator_failure(self):
         self.write_mock_runner(
             "#!/bin/bash\n"
-            "echo '{\"request_rate\": 4.0, \"completed\": 500, \"schedule_type\": \"fcfs\"}' > \"$RESULT_DIR/res.json\"\n"
+            "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'fcfs', 'seed': 0, 'ttfts': [0]*500, 'itls': [0]*500}))\"\n"
         )
         # Create a fake audit_validator script in repo root that fails
         val_script = os.path.join(self.repo_root, "scripts", "audit_validator.sh")
         try:
             with open(val_script, "w") as f: f.write("#!/bin/bash\nexit 1\n")
+            # We need to make it executable or run_one_experiment_safe might just check for file and run bash
             res = self.run_safe_runner()
             self.assertNotEqual(res.returncode, 0)
             self.assertIn("audit_validator.sh failed", res.stderr)
@@ -120,17 +121,22 @@ class TestSafeRunner(unittest.TestCase):
     def test_10_successful_fcfs(self):
         self.write_mock_runner(
             "#!/bin/bash\n"
-            "echo '{\"request_rate\": 4.0, \"completed\": 500, \"schedule_type\": \"fcfs\"}' > \"$RESULT_DIR/res.json\"\n"
+            "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'fcfs', 'seed': 0, 'ttfts': [0]*500, 'itls': [0]*500}))\"\n"
         )
-        res = self.run_safe_runner()
-        self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
-        
-        out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
-        self.assertTrue(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
-        with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
-            manifest = json.load(f)
-            self.assertTrue(manifest["eligible_for_aggregation"])
-            self.assertEqual(manifest["status"], "success")
+        val_script = os.path.join(self.repo_root, "scripts", "audit_validator.sh")
+        try:
+            with open(val_script, "w") as f: f.write("#!/bin/bash\nexit 0\n")
+            res = self.run_safe_runner()
+            self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
+            
+            out_dir = os.path.join(self.temp_dir, "test_phase", "rate4.0", "seed0", "fcfs")
+            self.assertTrue(os.path.exists(os.path.join(out_dir, "experiment_manifest.json")))
+            with open(os.path.join(out_dir, "experiment_manifest.json")) as f:
+                manifest = json.load(f)
+                self.assertTrue(manifest["eligible_for_aggregation"])
+                self.assertEqual(manifest["status"], "success")
+        finally:
+            if os.path.exists(val_script): os.remove(val_script)
 
     def test_11_successful_ltr(self):
         self.env["ARM"] = "ltr"
@@ -140,10 +146,15 @@ class TestSafeRunner(unittest.TestCase):
         
         self.write_mock_runner(
             "#!/bin/bash\n"
-            "echo '{\"request_rate\": 4.0, \"completed\": 500, \"schedule_type\": \"opt-test\"}' > \"$RESULT_DIR/res.json\"\n"
+            "python3 -c \"import json, os; open(os.path.join(os.environ['RESULT_DIR'], 'res.json'), 'w').write(json.dumps({'request_rate': 4.0, 'completed': 500, 'schedule_type': 'opt-test', 'seed': 0, 'ttfts': [0]*500, 'itls': [0]*500}))\"\n"
         )
-        res = self.run_safe_runner()
-        self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
+        val_script = os.path.join(self.repo_root, "scripts", "audit_validator.sh")
+        try:
+            with open(val_script, "w") as f: f.write("#!/bin/bash\nexit 0\n")
+            res = self.run_safe_runner()
+            self.assertEqual(res.returncode, 0, msg=f"STDOUT: {res.stdout}\nSTDERR: {res.stderr}")
+        finally:
+            if os.path.exists(val_script): os.remove(val_script)
 
     def test_12_crash_manifest_with_validator(self):
         # A crash should still write crash manifest even if validator might run (but validator shouldn't run on crash)

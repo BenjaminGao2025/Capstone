@@ -14,10 +14,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -34,10 +32,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -54,10 +50,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -74,10 +68,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -94,10 +86,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -114,10 +104,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -134,10 +122,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -154,10 +140,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -174,10 +158,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -194,10 +176,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -214,10 +194,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -234,10 +212,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -254,10 +230,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -274,10 +248,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": false,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -294,10 +266,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -314,10 +284,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -334,10 +302,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -354,10 +320,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -374,10 +338,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -394,10 +356,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -414,10 +374,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -434,10 +392,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -454,7 +410,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -472,7 +428,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -490,10 +446,8 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
-      "warnings": [
-        "generated_texts found in results"
-      ],
+      "audit_verdict": "METADATA_VERIFIED",
+      "warnings": [],
       "errors": []
     },
     {
@@ -510,7 +464,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -528,7 +482,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -546,7 +500,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -564,7 +518,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -582,7 +536,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -600,7 +554,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -618,7 +572,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -636,7 +590,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -654,7 +608,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -672,7 +626,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -690,7 +644,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -708,7 +662,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -726,7 +680,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": false,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -744,7 +698,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -762,7 +716,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -780,7 +734,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     },
@@ -798,7 +752,7 @@
       "expected_num_prompts": 500,
       "eligible_for_aggregation": true,
       "sha_status": "PASS",
-      "audit_verdict": "PASS",
+      "audit_verdict": "METADATA_VERIFIED",
       "warnings": [],
       "errors": []
     }

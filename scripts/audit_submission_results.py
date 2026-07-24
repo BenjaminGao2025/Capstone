@@ -14,44 +14,36 @@ SECRET_PATTERNS = [
 ]
 
 # Standard library schema validation
-def validate_schema(manifest):
+def validate_schema(manifest, repo_root):
     errors = []
     if not isinstance(manifest, dict):
         return ["Manifest is not a JSON object"]
-    
-    required_top = ["schema_version", "generated_at", "generator", "experiments"]
+
+    schema_path = os.path.join(repo_root, "results", "submission_manifest.schema.json")
+    try:
+        with open(schema_path, "r") as f:
+            schema = json.load(f)
+    except Exception as e:
+        return [f"Failed to load schema file: {e}"]
+
+    # Validate top level
+    required_top = schema.get("required", [])
     for req in required_top:
         if req not in manifest:
             errors.append(f"Missing top-level required field: {req}")
-            
+
+    if schema.get("additionalProperties") is False:
+        for k in manifest.keys():
+            if k not in schema.get("properties", {}):
+                errors.append(f"Top-level has unauthorized additional property: {k}")
+
     if "experiments" in manifest and not isinstance(manifest["experiments"], list):
         errors.append("Field 'experiments' must be a list")
         return errors
-        
-    required_exp = [
-        "experiment_id", "phase", "claim_category", "arm", "scheduler_type", 
-        "dataset_name", "test_distribution", "predictor_name", 
-        "predictor_training_distribution", "predictor_config_path", 
-        "predictor_config_sha256", "predictor_provenance_quality", 
-        "distribution_relation", "request_rate", "seed", "expected_num_prompts", 
-        "completed", "status", "eligible_for_aggregation", "result_path", 
-        "result_sha256", "log_path", "source_script", "source_commit", 
-        "duplicate_of", "notes"
-    ]
-    
-    allowed_exp = required_exp + [
-        "original_result_path", "original_result_sha256", "sanitizer_version"
-    ]
-    
-    enums = {
-        "phase": ["A", "B", "C", "D", "baseline", "ablation", "sweep", "ood_characterization"],
-        "claim_category": ["in_distribution", "ood_characterization", "mitigation", "stability", "crash_evidence", "ablation", "baseline"],
-        "test_distribution": ["lmsys", "sharegpt", "other", "unknown"],
-        "predictor_training_distribution": ["lmsys", "sharegpt", "other", "unknown", None],
-        "predictor_provenance_quality": ["full", "partial", "script-only", "unknown"],
-        "distribution_relation": ["in_distribution", "ood", "matched", "unknown"],
-        "status": ["valid", "incomplete", "crashed", "unverified"]
-    }
+
+    exp_schema = schema.get("properties", {}).get("experiments", {}).get("items", {})
+    required_exp = exp_schema.get("required", [])
+    exp_props = exp_schema.get("properties", {})
     
     for i, exp in enumerate(manifest.get("experiments", [])):
         if not isinstance(exp, dict):
@@ -62,31 +54,44 @@ def validate_schema(manifest):
             if req not in exp:
                 errors.append(f"Experiment {i} missing required field: {req}")
                 
-        for k in exp.keys():
-            if k not in allowed_exp:
-                errors.append(f"Experiment {i} has unauthorized additional property: {k}")
+        if exp_schema.get("additionalProperties") is False:
+            for k in exp.keys():
+                if k not in exp_props:
+                    errors.append(f"Experiment {i} has unauthorized additional property: {k}")
                 
         if not exp.get("experiment_id"):
             errors.append(f"Experiment {i} has empty experiment_id")
             
-        for k, allowed in enums.items():
-            if k in exp and exp[k] not in allowed:
-                errors.append(f"Experiment {i} field '{k}' value '{exp[k]}' not in allowed enums")
+        for k, v in exp.items():
+            if k not in exp_props:
+                continue
+            prop_def = exp_props[k]
+            
+            # Enums
+            if "enum" in prop_def and v not in prop_def["enum"]:
+                errors.append(f"Experiment {i} field '{k}' value '{v}' not in allowed enums")
                 
-        # Type checks
-        if "request_rate" in exp and not isinstance(exp["request_rate"], (int, float)):
-            errors.append(f"Experiment {i} field 'request_rate' must be number")
-        if "expected_num_prompts" in exp and not isinstance(exp["expected_num_prompts"], int):
-            errors.append(f"Experiment {i} field 'expected_num_prompts' must be integer")
-        if "completed" in exp and not isinstance(exp["completed"], int):
-            errors.append(f"Experiment {i} field 'completed' must be integer")
-        if "eligible_for_aggregation" in exp and not isinstance(exp["eligible_for_aggregation"], bool):
-            errors.append(f"Experiment {i} field 'eligible_for_aggregation' must be boolean")
+            # Basic type checks
+            t = prop_def.get("type")
+            if t:
+                types = [t] if isinstance(t, str) else t
+                valid_type = False
+                for t_str in types:
+                    if t_str == "string" and isinstance(v, str): valid_type = True
+                    elif t_str == "number" and isinstance(v, (int, float)): valid_type = True
+                    elif t_str == "integer" and isinstance(v, int) and not isinstance(v, bool): valid_type = True
+                    elif t_str == "boolean" and isinstance(v, bool): valid_type = True
+                    elif t_str == "null" and v is None: valid_type = True
+                
+                if not valid_type:
+                    errors.append(f"Experiment {i} field '{k}' has wrong type (expected {types})")
             
-        # SHA format check (64 hex chars)
-        if exp.get("result_sha256") and not re.match(r"^[0-9a-f]{64}$", exp["result_sha256"]):
-            errors.append(f"Experiment {i} result_sha256 is not a valid SHA-256")
-            
+            # Pattern matching
+            pattern = prop_def.get("pattern")
+            if pattern and isinstance(v, str):
+                if not re.match(pattern, v):
+                    errors.append(f"Experiment {i} field '{k}' does not match pattern {pattern}")
+                    
     return errors
 
 def validate_path_safety(path_str):
@@ -130,7 +135,7 @@ def audit_manifest(manifest_path, repo_root):
     results = []
     has_blockers = False
     
-    schema_errors = validate_schema(manifest)
+    schema_errors = validate_schema(manifest, repo_root)
     if schema_errors:
         return {"error": "Schema validation failed:\n" + "\n".join(schema_errors), "has_blockers": True, "results": []}
 
@@ -233,10 +238,50 @@ def audit_manifest(manifest_path, repo_root):
             
         # Generated Texts Check
         if "generated_texts" in res_data:
-            if exp.get("eligible_for_aggregation"):
-                audit_result["warnings"].append("EXPLICIT REVIEW REQUIRED: generated_texts found in eligible result. Sanitized derivative required for public submission.")
+            audit_result["errors"].append("Sanitized derivative MUST NOT contain generated_texts")
+            has_blockers = True
+
+        # Sanitizer Verification
+        orig_path_rel = exp.get("original_result_path")
+        orig_sha_manifest = exp.get("original_result_sha256")
+        san_ver = exp.get("sanitizer_version")
+        
+        if orig_path_rel or orig_sha_manifest or san_ver:
+            if not (orig_path_rel and orig_sha_manifest and san_ver):
+                audit_result["errors"].append("If one sanitizer field is provided, all three must be provided")
+                has_blockers = True
             else:
-                audit_result["warnings"].append("generated_texts found in results")
+                if san_ver != "1.0.0":
+                    audit_result["errors"].append(f"Unsupported sanitizer_version: {san_ver}")
+                    has_blockers = True
+                if not validate_path_safety(orig_path_rel):
+                    audit_result["errors"].append(f"Invalid/unsafe path for original_result_path: {orig_path_rel}")
+                    has_blockers = True
+                
+                orig_abs_path = os.path.join(repo_root, orig_path_rel)
+                if not os.path.exists(orig_abs_path):
+                    audit_result["errors"].append(f"Original file does not exist: {orig_path_rel}")
+                    has_blockers = True
+                else:
+                    actual_orig_sha = hash_file(orig_abs_path)
+                    if actual_orig_sha != orig_sha_manifest:
+                        audit_result["errors"].append(f"Original SHA-256 mismatch: expected {orig_sha_manifest}, got {actual_orig_sha}")
+                        has_blockers = True
+                    
+                    try:
+                        with open(orig_abs_path, "r") as f:
+                            orig_data = json.load(f)
+                        
+                        if "generated_texts" not in orig_data:
+                            audit_result["warnings"].append("Original file did not contain generated_texts, sanitization was unnecessary")
+                        else:
+                            del orig_data["generated_texts"]
+                            if orig_data != res_data:
+                                audit_result["errors"].append("Sanitized file does not match original file without generated_texts")
+                                has_blockers = True
+                    except Exception as e:
+                        audit_result["errors"].append(f"Failed to parse original result JSON: {e}")
+                        has_blockers = True
             
         # Secret Search (stream)
         if check_secrets_stream(result_abs_path):

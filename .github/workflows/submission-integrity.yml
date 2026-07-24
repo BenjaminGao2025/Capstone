@@ -34,6 +34,18 @@ jobs:
             --manifest results/submission_manifest.json \
             --json-output results/submission_audit.json \
             --markdown-output results/submission_audit.md
+            
+      - name: Verify audit lock
+        run: |
+          git diff --exit-code -- \
+            results/submission_audit.json \
+            results/submission_audit.md
+            
+      - name: Install chart dependencies
+        run: pip install matplotlib numpy
+        
+      - name: Test chart generation
+        run: python scripts/make_defense_charts.py
       
       - name: Run unit tests
         run: python -m unittest discover -s tests -v

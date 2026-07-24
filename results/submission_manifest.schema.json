@@ -7,6 +7,7 @@
     "generator",
     "experiments"
   ],
+  "additionalProperties": false,
   "properties": {
     "schema_version": {
       "type": "string"
@@ -210,8 +211,19 @@
               "string",
               "null"
             ]
+          },
+          "original_result_path": {
+            "type": "string"
+          },
+          "original_result_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sanitizer_version": {
+            "type": "string"
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
   }

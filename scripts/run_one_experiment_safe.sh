@@ -127,39 +127,81 @@ fi
 # 15. The single new JSON is the result
 RESULT_FILE="$NEW_JSONS"
 
+# Input validation to prevent injection
+if [[ "$PHASE" =~ [^a-zA-Z0-9_-] ]] || [[ "$ARM" =~ [^a-zA-Z0-9_-] ]] || [[ "$REQUEST_RATE" =~ [^0-9.] ]] || [[ "$SEED" =~ [^0-9] ]]; then
+    echo "ERROR: Invalid characters in inputs." >&2
+    exit 1
+fi
+
+if [[ "$PHASE" == *..* ]] || [[ "$PHASE" == */* ]] || [[ "$PHASE" == *\\* ]]; then
+    echo "ERROR: Path traversal detected in inputs." >&2
+    exit 1
+fi
+
 # 16. Python Validation
 echo "Validating result JSON..."
-python3 -c "
+python3 -c '
 import json, sys
+
+result_file = sys.argv[1]
+req_rate_expected = float(sys.argv[2])
+expected_prompts = int(sys.argv[3])
+arm = sys.argv[4]
+expected_seed = int(sys.argv[5])
+
 try:
-    with open('$RESULT_FILE', 'r') as f:
+    with open(result_file, "r") as f:
         data = json.load(f)
 except Exception as e:
-    print('ERROR parsing JSON:', e, file=sys.stderr)
+    print("ERROR parsing JSON:", e, file=sys.stderr)
     sys.exit(1)
     
-req_rate = float(data.get('request_rate', -1))
-if abs(req_rate - float($REQUEST_RATE)) > 1e-5:
-    print('ERROR: request_rate mismatch', file=sys.stderr)
+req_rate = float(data.get("request_rate", -1))
+if abs(req_rate - req_rate_expected) > 1e-5:
+    print("ERROR: request_rate mismatch", file=sys.stderr)
     sys.exit(1)
 
-completed = data.get('completed', -1)
-if completed != int($NUM_PROMPTS):
-    print(f'ERROR: completed count {completed} != expected {int($NUM_PROMPTS)}', file=sys.stderr)
+completed = data.get("completed", -1)
+if completed != expected_prompts:
+    print(f"ERROR: completed count {completed} != expected {expected_prompts}", file=sys.stderr)
     sys.exit(1)
 
-sched_type = data.get('schedule_type', '')
-arm = '$ARM'
+sched_type = data.get("schedule_type", "")
 match = False
-if arm == 'fcfs' and sched_type == 'fcfs': match = True
-elif arm == 'ltr' and sched_type.startswith('opt-') and not sched_type.startswith('opt-aging-'): match = True
-elif arm == 'v1' and sched_type.startswith('opt-aging-'): match = True
+if arm == "fcfs" and sched_type == "fcfs": match = True
+elif arm == "ltr" and sched_type.startswith("opt-") and not sched_type.startswith("opt-aging-"): match = True
+elif arm == "v1" and sched_type.startswith("opt-aging-"): match = True
 elif arm == sched_type: match = True
 
 if not match:
-    print(f'ERROR: schedule_type mismatch. ARM={arm}, json={sched_type}', file=sys.stderr)
+    print(f"ERROR: schedule_type mismatch. ARM={arm}, json={sched_type}", file=sys.stderr)
     sys.exit(1)
-" || exit 1
+
+# array length checks
+ttfts = data.get("ttfts", [])
+itls = data.get("itls", [])
+if len(ttfts) != completed:
+    print(f"ERROR: ttfts length {len(ttfts)} != completed {completed}", file=sys.stderr)
+    sys.exit(1)
+if len(itls) != completed:
+    print(f"ERROR: itls length {len(itls)} != completed {completed}", file=sys.stderr)
+    sys.exit(1)
+
+# errors/failed requests check
+if data.get("errors", 0) > 0 or data.get("failed_requests", 0) > 0 or data.get("failed", 0) > 0:
+    print("ERROR: Result contains errors or failed requests", file=sys.stderr)
+    sys.exit(1)
+
+# seed check
+if "seed" not in data:
+    print("ERROR: seed field missing in result", file=sys.stderr)
+    sys.exit(1)
+actual_seed = data["seed"]
+if actual_seed != expected_seed:
+    print(f"ERROR: seed {actual_seed} != expected {expected_seed}", file=sys.stderr)
+    sys.exit(1)
+
+' "$RESULT_FILE" "$REQUEST_RATE" "$NUM_PROMPTS" "$ARM" "$SEED" || exit 1
 
 # 17. Record metadata:
 RESULT_SHA=$(shasum -a 256 "$RESULT_FILE" | awk '{print $1}')
@@ -172,11 +214,14 @@ fi
 REPO_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# 18. Call the audit validator if available
+# 18. Call the audit validator if available (strict mode: MUST be available)
 if command -v audit_validator >/dev/null 2>&1; then
     audit_validator "$OUT_DIR" || { echo "ERROR: audit_validator failed" >&2; exit 1; }
 elif [ -f "scripts/audit_validator.sh" ]; then
     bash scripts/audit_validator.sh "$OUT_DIR" || { echo "ERROR: audit_validator.sh failed" >&2; exit 1; }
+else
+    echo "ERROR: audit_validator not found! Strict validation requires it." >&2
+    exit 1
 fi
 
 # 19. Write experiment_manifest.json ONLY after all passes
