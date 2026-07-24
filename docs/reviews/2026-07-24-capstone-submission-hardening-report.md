@@ -199,7 +199,7 @@ Implementation commit verified: b48180dfb3dae63018afe3a3a0713c36d0772696
 | Draft PR URL | https://github.com/BenjaminGao2025/Capstone/pull/30 |
 | PR state | Draft |
 | Merge state | **NOT MERGED** |
-| CI Run ID | To be generated for `b48180d` |
-| CI Status | Pending |
+| CI Run ID | [30127946361](https://github.com/BenjaminGao2025/Capstone/actions/runs/30127946361) |
+| CI Status | **SUCCESS** |
 | Unit Test Cmd | `python3 -m unittest discover -s tests -v` |
 | Unit Test Exit | `0` |
