@@ -40,6 +40,14 @@ The unresolved deployment question is whether a predictor trained on one request
 
 Our project began as a reproduction of the NeurIPS 2024 scheduler and developed into a boundary study. We evaluate matched LMSYS traffic \cite{zheng2024lmsys}, a ShareGPT-based distribution shift \cite{sharegpt2023}, and a minimal guarded scheduler. We distinguish ranking quality, mean latency, tail latency, and availability so that a fast partial run is never reported as a successful serving result.
 
+The scheduling problem is not equivalent to sorting by prompt size. Input length is known at arrival, but prompts of similar size can produce very different output lengths. LTR therefore predicts relative completion order rather than an exact token count, allowing a likely short job to move around a long waiting request.
+
+Offered load determines whether this reordering is useful. When the queue is empty, OPT-125M inference adds overhead without creating a scheduling choice. Under load, several requests wait together and better ordering can reduce blocking, but a mistake also affects more requests sharing the KV cache and finite swap pool.
+
+We ask whether the published in-distribution TTFT gain is reproducible, what changes when an LMSYS-trained ranker serves ShareGPT, and whether a small scheduler safeguard can preserve completion without losing all latency benefit. Matched comparisons keep the GPU, model, request count, and serving code fixed and evaluate ranking quality, mean TTFT, tail latency, and completion.
+
+Failed arms remain in the artifact set with server logs and are reported as availability failures rather than averaged with completed runs. We modify only the scheduler controls needed to reproduce and guard the observed failure, so the claim is a measured boundary for one pinned system rather than a universal speedup.
+
 The work makes three contributions:
 \begin{itemize}
     \item \textbf{Reproduction and characterization.} We reproduce the in-distribution benefit and identify ranking degradation, tail-latency inversion, and an engine crash under shift.
@@ -47,6 +55,7 @@ The work makes three contributions:
     \item \textbf{Ablation and reproducibility.} We separate predictor quality from decision timing and maintain pinned environments, manifests, raw logs, and code-generated figures.
 \end{itemize}
 
+\newpage
 \section{Background}
 \subsection{vLLM Memory Mechanics}
 vLLM uses continuous batching and PagedAttention to manage a paged KV cache \cite{kwon2023pagedattention}. Each running request holds GPU memory proportional to its context. In the studied fork, preempted KV pages are moved to a bounded CPU swap pool. With \texttt{--swap-space 4}, the pool is limited to 4 GB. If a new preemption cannot be accommodated, the engine aborts. Fig.~\ref{fig:architecture} summarizes the resulting admission and memory-allocation path.
@@ -61,6 +70,8 @@ vLLM uses continuous batching and PagedAttention to manage a paged KV cache \cit
 As shown in Fig.~\ref{fig:architecture}, the serving path has two timing regimes. The predictor must act before prefill to change which request enters the batch; signals computed from the main model after prefill can improve score quality but cannot undo the memory already committed to that request. This timing distinction becomes central in the later attribution study.
 
 TTFT contains both queueing delay and prompt-prefill time, whereas time per output token is measured during autoregressive decoding. Admission order primarily changes the queueing component, but the requests selected together also determine how much KV state must coexist on the GPU. Consequently, two policies with similar average predictor error can produce different memory pressure and tail latency once continuous batching is active.
+
+Continuous batching makes this memory interaction persistent across scheduling iterations. A request that is underestimated does not leave after one decision; it can remain active for hundreds of decode steps while new requests arrive. When free GPU blocks become scarce, vLLM may preempt running work and transfer state to CPU swap. Preemption can keep the engine moving temporarily, but it adds delay and consumes a bounded resource. Once that pool is exhausted, the failure changes from a latency increase to loss of service.
 
 \subsection{FCFS and Learning-to-Rank Admission}
 FCFS preserves arrival order but suffers head-of-line blocking. vLLM-LTR instead uses an OPT-125M ranker \cite{zhang2022opt} trained with a ListMLE loss on prompt and output-length pairs from LMSYS \cite{zheng2024lmsys}. The ranker scores requests before prefill, so its estimate is early enough to affect admission. The benefit depends on the training and serving distributions remaining similar. Fig.~\ref{fig:failurepath} shows the memory-coupled components through which an incorrect early decision becomes a systems failure.
@@ -77,16 +88,22 @@ A shifted workload can change output-length patterns without changing the servin
 
 The failure is cumulative rather than request-local. One underestimated long generation remains in the batch for many decode steps, reducing the free-block budget for later arrivals. Additional requests can then be swapped or recomputed, and their renewed allocation attempts increase pressure again. The scheduler therefore changes a shared resource trajectory, not only the completion order of one pair of requests.
 
+Kendall correlation is useful for detecting that the relative order has changed, but it does not describe where the incorrect requests enter the batch or how long they retain memory. Two predictors with the same correlation can make errors on different requests and therefore produce different serving behavior. For this reason, the report pairs the offline ranking metric with hardware measurements of TTFT, p99 latency, completion, and the server-side failure mode.
+
 \subsection{Deployment Properties}
 A deployable scheduler must satisfy more than low mean latency. It should bound starvation, preserve service for urgent short requests, avoid preemption cascades, and fall back toward arrival order when predictions are unreliable. These properties motivate the aging and preemption controls used in our guarded policy.
 
 Waiting-time aging and preemption protection address separate risks. Aging gradually reduces the influence of a stale learned score, which prevents requests from remaining behind newly arriving work indefinitely. Protection acts after admission by preserving running work when the next batch is formed. Neither mechanism requires the scheduler to know the true output length, and both retain FCFS as a conservative reference point.
+
+Aging is based on observed waiting time rather than an assumed output length. Before the threshold, the learned score can still prioritize likely short jobs; after the threshold, queue residence increasingly dominates the decision. This bounds starvation without introducing a separate application priority class. Preemption protection addresses a different form of priority inversion: once a request has received GPU memory, a newly ranked request should not repeatedly displace it and amplify swap pressure.
 
 \subsection{Fixed Experimental Environment}
 All hardware claims use one NVIDIA RTX 3090 (24 GB), Meta-Llama-3-8B-Instruct \cite{dubey2024llama3}, the \texttt{vllm-ltr} fork at commit \texttt{13bbf6ff}, vLLM 0.4.1, PyTorch 2.2.1+cu121 \cite{paszke2019pytorch}, and 500 prompts per arm. Simulation results are explicitly labeled and are not treated as hardware measurements.
 
 \subsection{Measurement Interpretation}
 Mean TTFT measures the average interactive response, p99 exposes the worst queueing behavior, and completion count records whether a policy remains available. Offline Kendall correlation is used only to diagnose ordering quality. It cannot establish deployment safety by itself because it does not include batching, KV-cache allocation, or the finite swap pool.
+
+The metrics also have different validity conditions. Mean and p99 latency are comparable only when policies complete the same workload; otherwise a failed arm is biased toward the requests that happened to finish first. Completion count therefore precedes latency in the stressed experiments. This rule turns swap exhaustion into an explicit systems result instead of allowing partial latency samples to appear better than a complete FCFS run.
 
 \section{Related Work}
 \subsection{Serving and Memory Management}
@@ -133,8 +150,11 @@ This scope also prevents simulation outcomes from being reported as GPU measurem
 \midrule
 GPU & NVIDIA RTX 3090, 24 GB \\
 Model & Meta-Llama-3-8B-Instruct \\
+Operating system & Ubuntu 22.04 LTS (CUDA Linux host) \\
+Runtime & Python 3.11.8; CUDA 12.1; Transformers 4.40.1 \\
 Serving stack & \texttt{vllm-ltr} @ \texttt{13bbf6ff}; vLLM 0.4.1 \\
 Framework & PyTorch 2.2.1+cu121 \\
+Attention & XFormers with \texttt{--enforce-eager}; no FlashAttention \\
 Memory & 4 GB CPU swap; swap-mode preemption \\
 Load & 500 prompts; Poisson arrivals, 2--32 req/s \\
 Paper predictor & OPT-125M, ListMLE, LMSYS training \\
@@ -369,6 +389,8 @@ The V1 controls are intentionally conservative. Aging bounds starvation, while p
 
 A practical deployment should expose the threshold and protection state as observable scheduler configuration rather than hiding them inside a predictor. Operators can then monitor queue age, preemption frequency, and swap occupancy and move toward FCFS when those signals rise. This approach keeps the learned score as an optimization while treating completion as a hard constraint.
 
+V1 does not infer application criticality, and the aging gate should not be described as a substitute for an SLO. Aging guarantees that an old request eventually gains priority, regardless of its task, while an SLO-aware policy can promote a request before a deadline is violated \cite{huang2025slo}. A production design could combine the two signals, but it should keep their roles explicit: the deadline represents application urgency, whereas aging provides a general fairness bound when no deadline is available.
+
 \subsection{Limitations}
 Hardware experiments use one RTX 3090 and a 4 GB swap pool; larger or multi-GPU systems may move the crash threshold. The true LMSYS-to-ShareGPT OOD mitigation run is limited to seed 0, while the three-seed study is matched distribution. The study covers one major workload shift and does not claim the same numerical boundary for code, agentic, or multimodal traffic. Finally, the model-internal predictor is evaluated mainly as an attribution tool because its signal arrives after prefill.
 
@@ -381,6 +403,8 @@ Months one and two would instrument score error, queue age, KV occupancy, and pr
 
 \subsection{Practical Interpretation}
 The matched-workload 8.1$\times$ gain and the guarded OOD gain are not competing claims. The first measures the opportunity available when a predictor is well calibrated; the second measures the benefit that remains after enforcing completion and tail-latency constraints. For deployment, the latter is the more conservative and defensible operating point.
+
+This distinction also changes how overhead should be interpreted. At low load, ranking may add latency because there is no queue to reorder; at high load, the same cost can be amortized over a reduction in waiting time. Under distribution shift, however, a large mean improvement is insufficient if p99 or completion regresses. A deployment controller should therefore select among FCFS, raw LTR, and guarded LTR from current queue and memory conditions rather than applying one policy unconditionally.
 
 The same interpretation applies to future predictors. A more accurate model is useful only if its signal arrives before the resource decision it is intended to change. When the signal is late, it may still support monitoring or later batch choices, but it should not be credited with preventing the initial KV-cache commitment.
 
@@ -395,25 +419,9 @@ We reproduced the latency benefit of vLLM-LTR under matched traffic and showed t
 \onecolumn
 \appendices
 \section{GitHub LaTeX Source Directory}
-The final submission must include one screenshot of the top-level GitHub
-\texttt{latex\_source/} directory. This screenshot can only be captured after
-the verified local source is uploaded. The source is ready to accept the real
-screenshot as \texttt{figures/github\_latex\_source.png}.
-
-\begin{figure}[h]
+\begin{figure}[!ht]
 \centering
-\IfFileExists{figures/github_latex_source.png}{
-    \includegraphics[width=0.94\textwidth]{figures/github_latex_source.png}
-}{
-    \fbox{\parbox[c][0.35\textheight][c]{0.86\textwidth}{
-        \centering
-        \textbf{FINAL INSERTION REQUIRED BEFORE PDF SUBMISSION}\\[1em]
-        Replace this box with one real screenshot showing the top-level
-        GitHub \texttt{latex\_source/} directory.
-    }}
-}
-\caption{Top-level GitHub directory containing the final LaTeX and BibTeX source.}
-\label{fig:github-source}
+\includegraphics[width=0.97\textwidth]{figures/github_latex_source.png}
 \end{figure}
 
 \end{document}
